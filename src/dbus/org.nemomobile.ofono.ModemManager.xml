@@ -1,0 +1,60 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.nemomobile.ofono.ModemManager">
+        <method name="GetAll">
+            <arg name="version" type="i" direction="out"/>
+            <arg name="availableModems" type="ao" direction="out"/>
+            <arg name="enabledModems" type="ao" direction="out"/>
+            <arg name="defaultDataSim" type="s" direction="out"/>
+            <arg name="defaultVoiceSim" type="s" direction="out"/>
+            <arg name="defaultDataModem" type="s" direction="out"/>
+            <arg name="defaultVoiceModem" type="s" direction="out"/>
+        </method>
+        <method name="GetInterfaceVersion">
+            <arg name="version" type="i" direction="out"/>
+        </method>
+        <method name="GetAvailableModems">
+            <arg name="modems" type="ao" direction="out"/>
+        </method>
+        <method name="GetEnabledModems">
+            <arg name="modems" type="ao" direction="out"/>
+        </method>
+        <method name="GetDefaultDataSim">
+            <arg name="imsi" type="s" direction="out"/>
+        </method>
+        <method name="GetDefaultVoiceSim">
+            <arg name="imsi" type="s" direction="out"/>
+        </method>
+        <method name="GetDefaultDataModem">
+            <arg name="path" type="s" direction="out"/>
+        </method>
+        <method name="GetDefaultVoiceModem">
+            <arg name="path" type="s" direction="out"/>
+        </method>
+        <method name="SetEnabledModems">
+            <arg name="modems" type="ao" direction="in"/>
+        </method>
+        <method name="SetDefaultDataSim">
+            <arg name="imsi" type="s" direction="in"/>
+        </method>
+        <method name="SetDefaultVoiceSim">
+            <arg name="imsi" type="s" direction="in"/>
+        </method>
+        <signal name="EnabledModemsChanged">
+            <arg name="modems" type="ao"/>
+        </signal>
+        <signal name="DefaultDataSimChanged">
+            <arg name="imsi" type="s"/>
+        </signal>
+        <signal name="DefaultVoiceSimChanged">
+            <arg name="imsi" type="s"/>
+        </signal>
+        <signal name="DefaultDataModemChanged">
+            <arg name="path" type="s"/>
+        </signal>
+        <signal name="DefaultVoiceModemChanged">
+            <arg name="path" type="s"/>
+        </signal>
+    </interface>
+</node>

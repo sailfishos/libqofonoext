@@ -1,0 +1,6 @@
+prefix=/usr
+exec_prefix=$${prefix}
+
+DEPENDPATH += $${prefix}/include/qofonoext
+INCLUDEPATH += $${prefix}/include/qofonoext
+LIBS += -L $${exec_prefix}/lib -lqofonoext

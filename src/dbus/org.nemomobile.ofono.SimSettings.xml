@@ -1,0 +1,27 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.nemomobile.ofono.SimSettings">
+        <method name="GetAll">
+            <arg name="settings" type="ibs" direction="out"/>
+        </method>
+        <method name="GetInterfaceVersion">
+            <arg name="version" type="i" direction="out"/>
+        </method>
+        <method name="GetEnable4G">
+            <arg name="enable" type="b" direction="out"/>
+        </method>
+        <method name="GetDisplayName">
+            <arg name="name" type="s" direction="out"/>
+        </method>
+        <method name="SetDisplayName">
+            <arg name="name" type="s" direction="in"/>
+        </method>
+        <signal name="DisplayNameChanged">
+            <arg name="name" type="s"/>
+        </signal>
+        <signal name="Enable4GChanged">
+            <arg name="enabled" type="b"/>
+        </signal>
+    </interface>
+</node>

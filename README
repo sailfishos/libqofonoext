@@ -1,0 +1,4 @@
+qofono-ext
+=========
+
+A library for accessing nemomobile specific ofono extensions, and a declarative plugin for it.
