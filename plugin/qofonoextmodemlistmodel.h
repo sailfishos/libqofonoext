@@ -30,7 +30,8 @@ public:
         PathRole = Qt::UserRole,
         EnabledRole,
         DefaultDataRole,
-        DefaultVoiceRole
+        DefaultVoiceRole,
+        SimPresentRole
     };
 
     explicit QOfonoExtModemListModel(QObject* aParent = NULL);
@@ -52,6 +53,7 @@ private Q_SLOTS:
     void onEnabledModemsChanged(QStringList aModems);
     void onDefaultDataModemChanged(QString aModemPath);
     void onDefaultVoiceModemChanged(QString aModemPath);
+    void onPresentSimChanged(int aIndex, bool aPresent);
 
 private:
     void defaultModemChanged(Role aRole, int aPrevRow, int aNewRow);

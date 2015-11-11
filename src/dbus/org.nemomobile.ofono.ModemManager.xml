@@ -11,6 +11,17 @@
             <arg name="defaultDataModem" type="s" direction="out"/>
             <arg name="defaultVoiceModem" type="s" direction="out"/>
         </method>
+        <method name="GetAll2">
+            <arg name="version" type="i" direction="out"/>
+            <arg name="availableModems" type="ao" direction="out"/>
+            <arg name="enabledModems" type="ao" direction="out"/>
+            <arg name="defaultDataSim" type="s" direction="out"/>
+            <arg name="defaultVoiceSim" type="s" direction="out"/>
+            <arg name="defaultDataModem" type="s" direction="out"/>
+            <arg name="defaultVoiceModem" type="s" direction="out"/>
+            <arg name="presentSims" type="ab" direction="out"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.Out7" value="QOfonoExtBoolList"/>
+        </method>
         <method name="GetInterfaceVersion">
             <arg name="version" type="i" direction="out"/>
         </method>
@@ -19,6 +30,9 @@
         </method>
         <method name="GetEnabledModems">
             <arg name="modems" type="ao" direction="out"/>
+        </method>
+        <method name="GetPresentSims">
+            <arg name="modems" type="as" direction="out"/>
         </method>
         <method name="GetDefaultDataSim">
             <arg name="imsi" type="s" direction="out"/>
@@ -43,6 +57,10 @@
         </method>
         <signal name="EnabledModemsChanged">
             <arg name="modems" type="ao"/>
+        </signal>
+        <signal name="PresentSimsChanged">
+            <arg name="index" type="i"/>
+            <arg name="present" type="b"/>
         </signal>
         <signal name="DefaultDataSimChanged">
             <arg name="imsi" type="s"/>
