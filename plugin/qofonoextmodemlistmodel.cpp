@@ -38,6 +38,9 @@ QOfonoExtModemListModel::QOfonoExtModemListModel(QObject* aParent) :
     connect(iModemManager.data(),
         SIGNAL(defaultVoiceModemChanged(QString)),
         SLOT(onDefaultVoiceModemChanged(QString)));
+    connect(iModemManager.data(),
+        SIGNAL(presentSimChanged(int,bool)),
+        SLOT(onPresentSimChanged(int,bool)));
 }
 
 bool QOfonoExtModemListModel::valid() const
@@ -57,6 +60,7 @@ QHash<int,QByteArray> QOfonoExtModemListModel::roleNames() const
     roles[EnabledRole]      = "enabled";
     roles[DefaultDataRole]  = "defaultForData";
     roles[DefaultVoiceRole] = "defaultForVoice";
+    roles[SimPresentRole]   = "simPresent";
     return roles;
 }
 
@@ -75,6 +79,7 @@ QVariant QOfonoExtModemListModel::data(const QModelIndex& aIndex, int aRole) con
         case EnabledRole:      return iEnabledModems.contains(path);
         case DefaultDataRole:  return iAvailableModems.indexOf(iDefaultDataModem) == row;
         case DefaultVoiceRole: return iAvailableModems.indexOf(iDefaultVoiceModem) == row;
+        case SimPresentRole:   return iModemManager->simPresentAt(row);
         }
     }
     qWarning() << aIndex << aRole;
@@ -143,6 +148,14 @@ void QOfonoExtModemListModel::onDefaultVoiceModemChanged(QString aModemPath)
     const int prevIndex = iAvailableModems.indexOf(iDefaultVoiceModem);
     iDefaultVoiceModem = aModemPath;
     defaultModemChanged(DefaultVoiceRole, prevIndex, iAvailableModems.indexOf(aModemPath));
+}
+
+void QOfonoExtModemListModel::onPresentSimChanged(int aIndex, bool aPresent)
+{
+    QVector<int> role;
+    role.append(SimPresentRole);
+    QModelIndex index(createIndex(aIndex, 0));
+    Q_EMIT dataChanged(index, index, role);
 }
 
 void QOfonoExtModemListModel::defaultModemChanged(Role aRole, int aPrevRow, int aNewRow)

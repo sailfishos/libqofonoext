@@ -33,12 +33,18 @@ public:
     QString iDefaultDataModem;
     QString iDefaultVoiceSim;
     QString iDefaultDataSim;
+    QOfonoExtBoolList iPresentSims;
+    int iPresentSimCount;
+    int iActiveSimCount;
     bool iValid;
 
     Private(QOfonoExtModemManager* aParent);
 
     static QStringList toStringList(QList<QDBusObjectPath> aList);
     static QList<QDBusObjectPath> toPathList(QStringList aList);
+
+    void presentSimsChanged(QOfonoExtBoolList aOldList);
+    void updateSimCounts();
 
 private Q_SLOTS:
     void onServiceRegistered();
@@ -49,6 +55,7 @@ private Q_SLOTS:
     void onDefaultDataModemChanged(QString aModemPath);
     void onDefaultVoiceSimChanged(QString aImsi);
     void onDefaultDataSimChanged(QString aImsi);
+    void onPresentSimsChanged(int aIndex, bool aPresent);
 };
 
 QWeakPointer<QOfonoExtModemManager> QOfonoExtModemManager::Private::sSharedInstance;
@@ -77,6 +84,8 @@ QOfonoExtModemManager::Private::Private(QOfonoExtModemManager* aParent) :
     QObject(aParent),
     iParent(aParent),
     iProxy(NULL),
+    iPresentSimCount(0),
+    iActiveSimCount(0),
     iValid(false)
 {
     QDBusServiceWatcher* ofonoWatcher = new QDBusServiceWatcher(OFONO_SERVICE,
@@ -100,7 +109,7 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
         iProxy = new QOfonoExtModemManagerProxy(OFONO_SERVICE, "/", OFONO_BUS, this);
         if (iProxy->isValid()) {
             iValid = false;
-            connect(new QDBusPendingCallWatcher(iProxy->GetAll(), iProxy),
+            connect(new QDBusPendingCallWatcher(iProxy->GetAll2(), iProxy),
                 SIGNAL(finished(QDBusPendingCallWatcher*)),
                 SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
             connect(iProxy,
@@ -118,6 +127,9 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
             connect(iProxy,
                 SIGNAL(DefaultVoiceSimChanged(QString)),
                 SLOT(onDefaultVoiceSimChanged(QString)));
+            connect(iProxy,
+                SIGNAL(PresentSimsChanged(int,bool)),
+                SLOT(onPresentSimsChanged(int,bool)));
         } else {
             delete iProxy;
             iProxy = NULL;
@@ -148,7 +160,8 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         QString,                // DefaultDataSim
         QString,                // DefaultVoiceSim
         QString,                // DefaultDataModem
-        QString>                // DefaultVoiceModem
+        QString,                // DefaultVoiceModem
+        QOfonoExtBoolList>      // PresentSims
         reply(*aWatcher);
     if (reply.isError()) {
         qWarning() << reply.error();
@@ -183,12 +196,64 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
             iDefaultVoiceModem = path;
             Q_EMIT iParent->defaultVoiceModemChanged(iDefaultVoiceModem);
         }
+
+        QOfonoExtBoolList oldList = iPresentSims;
+        iPresentSims = reply.argumentAt<7>();
+        presentSimsChanged(oldList);
+
         if (!iValid) {
             iValid = true;
             Q_EMIT iParent->validChanged(iValid);
         }
     }
     aWatcher->deleteLater();
+}
+
+void QOfonoExtModemManager::Private::presentSimsChanged(QOfonoExtBoolList aOldList)
+{
+    int i;
+    const int n = iPresentSims.count();
+    QList<bool> changed;
+    changed.reserve(n);
+    for (i=0; i<n; i++) {
+        const bool prev = (i<aOldList.count() && aOldList.at(i));
+        changed.append(iPresentSims.at(i) != prev);
+    }
+    updateSimCounts();
+    for (i=0; i<n; i++) {
+        if (changed.at(i)) {
+            Q_EMIT iParent->presentSimChanged(i, iPresentSims.at(i));
+        }
+    }
+    if (aOldList != iPresentSims) {
+        Q_EMIT iParent->presentSimsChanged(iPresentSims);
+    }
+}
+
+void QOfonoExtModemManager::Private::updateSimCounts()
+{
+    const int oldPresentSimCount = iPresentSimCount;
+    const int oldActiveSimCount = iActiveSimCount;
+
+    iPresentSimCount = 0;
+    iActiveSimCount = 0;
+
+    const int n = iPresentSims.count();
+    for (int i=0; i<n; i++) {
+        if (iPresentSims.at(i)) {
+            iPresentSimCount++;
+            if (i < iAvailableModems.count() &&
+                iEnabledModems.contains(iAvailableModems.at(i))) {
+                iActiveSimCount++;
+            }
+        }
+    }
+    if (oldPresentSimCount != iPresentSimCount) {
+        Q_EMIT iParent->presentSimCountChanged(iPresentSimCount);
+    }
+    if (oldActiveSimCount != iActiveSimCount) {
+        Q_EMIT iParent->activeSimCountChanged(iActiveSimCount);
+    }
 }
 
 void QOfonoExtModemManager::Private::onEnabledModemsChanged(QList<QDBusObjectPath> aModems)
@@ -198,6 +263,7 @@ void QOfonoExtModemManager::Private::onEnabledModemsChanged(QList<QDBusObjectPat
         iEnabledModems = enabledModems;
         Q_EMIT iParent->enabledModemsChanged(iEnabledModems);
     }
+    updateSimCounts();
 }
 
 void QOfonoExtModemManager::Private::onDefaultDataModemChanged(QString aPath)
@@ -225,6 +291,15 @@ void QOfonoExtModemManager::Private::onDefaultVoiceSimChanged(QString aImsi)
     if (iDefaultVoiceSim != aImsi) {
         iDefaultVoiceSim = aImsi;
         Q_EMIT iParent->defaultVoiceSimChanged(aImsi);
+    }
+}
+
+void QOfonoExtModemManager::Private::onPresentSimsChanged(int aIndex, bool aPresent)
+{
+    if (aIndex >= 0 && aIndex < iPresentSims.count()) {
+        QOfonoExtBoolList oldList = iPresentSims;
+        iPresentSims[aIndex] = aPresent;
+        presentSimsChanged(oldList);
     }
 }
 
@@ -275,6 +350,30 @@ QString QOfonoExtModemManager::defaultVoiceSim() const
 QString QOfonoExtModemManager::defaultDataSim() const
 {
     return iPrivate->iDefaultDataSim;
+}
+
+QOfonoExtBoolList QOfonoExtModemManager::presentSims() const
+{
+    return iPrivate->iPresentSims;
+}
+
+int QOfonoExtModemManager::presentSimCount() const
+{
+    return iPrivate->iPresentSimCount;
+}
+
+int QOfonoExtModemManager::activeSimCount() const
+{
+    return iPrivate->iActiveSimCount;
+}
+
+bool QOfonoExtModemManager::simPresentAt(int aIndex) const
+{
+    if (aIndex >= 0 && aIndex < iPrivate->iPresentSims.count()) {
+        return iPrivate->iPresentSims.at(aIndex);
+    } else {
+        return false;
+    }
 }
 
 void QOfonoExtModemManager::setEnabledModems(QStringList aModems)
