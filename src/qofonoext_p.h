@@ -23,4 +23,6 @@
 #define OFONO_SERVICE "org.ofono"
 #define OFONO_BUS QDBusConnection::systemBus()
 
+typedef QList<bool> QOfonoExtBoolList;
+
 #endif // QOFONOEXT_PRIVATE_H

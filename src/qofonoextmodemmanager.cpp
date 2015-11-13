@@ -161,7 +161,7 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         QString,                // DefaultVoiceSim
         QString,                // DefaultDataModem
         QString,                // DefaultVoiceModem
-        QOfonoExtBoolList>      // PresentSims
+        QList<bool> >           // PresentSims
         reply(*aWatcher);
     if (reply.isError()) {
         qWarning() << reply.error();
@@ -198,7 +198,7 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         }
 
         QList<bool> oldList = iPresentSims;
-        iPresentSims = (QList<bool>)reply.argumentAt<7>();
+        iPresentSims = reply.argumentAt<7>();
         presentSimsChanged(oldList);
 
         if (!iValid) {

@@ -39,7 +39,7 @@ HEADERS += \
 
 DBUS_INTERFACES += org_nemomobile_ofono_modem_manager
 org_nemomobile_ofono_modem_manager.files = dbus/org.nemomobile.ofono.ModemManager.xml
-org_nemomobile_ofono_modem_manager.header_flags = -N -c QOfonoExtModemManagerProxy -i qofonoext_types.h
+org_nemomobile_ofono_modem_manager.header_flags = -N -c QOfonoExtModemManagerProxy -i qofonoext_p.h
 org_nemomobile_ofono_modem_manager.source_flags = -N -c QOfonoExtModemManagerProxy
 
 DBUS_INTERFACES += org_nemomobile_ofono_sim_settings

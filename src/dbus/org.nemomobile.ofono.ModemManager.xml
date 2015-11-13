@@ -32,7 +32,8 @@
             <arg name="modems" type="ao" direction="out"/>
         </method>
         <method name="GetPresentSims">
-            <arg name="modems" type="as" direction="out"/>
+            <arg name="presentSims" type="ab" direction="out"/>
+            <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QOfonoExtBoolList"/>
         </method>
         <method name="GetDefaultDataSim">
             <arg name="imsi" type="s" direction="out"/>

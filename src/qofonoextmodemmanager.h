@@ -63,7 +63,7 @@ Q_SIGNALS:
     void defaultDataModemChanged(QString value);
     void defaultVoiceSimChanged(QString value);
     void defaultDataSimChanged(QString value);
-    void presentSimsChanged(QOfonoExtBoolList value);
+    void presentSimsChanged(QList<bool> value);
     void presentSimChanged(int index, bool present);
     void presentSimCountChanged(int value);
     void activeSimCountChanged(int value);

@@ -24,6 +24,4 @@
 #  define QOFONOEXT_EXPORT Q_DECL_IMPORT
 #endif
 
-typedef QList<bool> QOfonoExtBoolList;
-
 #endif // QOFONOEXT_TYPES_H
