@@ -13,11 +13,13 @@ INCLUDEPATH += ../src
 
 SOURCES = \
     qofonoextdeclarativeplugin.cpp \
-    qofonoextmodemlistmodel.cpp
+    qofonoextmodemlistmodel.cpp \
+    qofonoextdeclarativemodemmanager.cpp
 
 HEADERS = \
     qofonoextdeclarativeplugin.h \
-    qofonoextmodemlistmodel.h
+    qofonoextmodemlistmodel.h \
+    qofonoextdeclarativemodemmanager.h
 
 OTHER_FILES += qmldir
 
