@@ -25,7 +25,7 @@ QOfonoExtModemListModel::QOfonoExtModemListModel(QObject* aParent) :
 {
     connect(iModemManager.data(),
         SIGNAL(validChanged(bool)),
-        SIGNAL(validChanged(bool)));
+        SLOT(onValidChanged(bool)));
     connect(iModemManager.data(),
         SIGNAL(availableModemsChanged(QStringList)),
         SLOT(onAvailableModemsChanged(QStringList)));
@@ -61,6 +61,7 @@ QHash<int,QByteArray> QOfonoExtModemListModel::roleNames() const
     roles[DefaultDataRole]  = "defaultForData";
     roles[DefaultVoiceRole] = "defaultForVoice";
     roles[SimPresentRole]   = "simPresent";
+    roles[IMEIRole]         = "imei";
     return roles;
 }
 
@@ -73,13 +74,13 @@ QVariant QOfonoExtModemListModel::data(const QModelIndex& aIndex, int aRole) con
 {
     const int row = aIndex.row();
     if (row >= 0 && row < iAvailableModems.count()) {
-        const QString& path(iAvailableModems.at(row));
         switch (aRole) {
-        case PathRole:         return path;
-        case EnabledRole:      return iEnabledModems.contains(path);
+        case PathRole:         return iAvailableModems.at(row);
+        case EnabledRole:      return iEnabledModems.contains(iAvailableModems.at(row));
         case DefaultDataRole:  return iAvailableModems.indexOf(iDefaultDataModem) == row;
         case DefaultVoiceRole: return iAvailableModems.indexOf(iDefaultVoiceModem) == row;
         case SimPresentRole:   return iModemManager->simPresentAt(row);
+        case IMEIRole:         return iModemManager->imeiAt(row);
         }
     }
     qWarning() << aIndex << aRole;
@@ -105,6 +106,15 @@ bool QOfonoExtModemListModel::setData(const QModelIndex& aIndex, const QVariant&
         return true;
     }
     return false;
+}
+
+void QOfonoExtModemListModel::onValidChanged(bool aValid)
+{
+    if (aValid) {
+        beginResetModel();
+        endResetModel();
+    }
+    Q_EMIT validChanged(aValid);
 }
 
 void QOfonoExtModemListModel::onAvailableModemsChanged(QStringList aModems)

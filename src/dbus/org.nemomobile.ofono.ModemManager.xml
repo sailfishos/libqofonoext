@@ -22,6 +22,10 @@
             <arg name="presentSims" type="ab" direction="out"/>
             <annotation name="org.qtproject.QtDBus.QtTypeName.Out7" value="QOfonoExtBoolList"/>
         </method>
+        <method name="GetAll3">
+            <arg name="version" type="i" direction="out"/>
+            <arg name="otherValues" type="aoaossssabas" direction="out"/>
+        </method>
         <method name="GetInterfaceVersion">
             <arg name="version" type="i" direction="out"/>
         </method>
@@ -34,6 +38,9 @@
         <method name="GetPresentSims">
             <arg name="presentSims" type="ab" direction="out"/>
             <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="QOfonoExtBoolList"/>
+        </method>
+        <method name="GetIMEI">
+            <arg name="imsi" type="as" direction="out"/>
         </method>
         <method name="GetDefaultDataSim">
             <arg name="imsi" type="s" direction="out"/>

@@ -31,7 +31,8 @@ public:
         EnabledRole,
         DefaultDataRole,
         DefaultVoiceRole,
-        SimPresentRole
+        SimPresentRole,
+        IMEIRole
     };
 
     explicit QOfonoExtModemListModel(QObject* aParent = NULL);
@@ -49,6 +50,7 @@ Q_SIGNALS:
     void countChanged(int aCount);
 
 private Q_SLOTS:
+    void onValidChanged(bool aValid);
     void onAvailableModemsChanged(QStringList aModems);
     void onEnabledModemsChanged(QStringList aModems);
     void onDefaultDataModemChanged(QString aModemPath);
