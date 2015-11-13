@@ -33,7 +33,7 @@ public:
     QString iDefaultDataModem;
     QString iDefaultVoiceSim;
     QString iDefaultDataSim;
-    QOfonoExtBoolList iPresentSims;
+    QList<bool> iPresentSims;
     int iPresentSimCount;
     int iActiveSimCount;
     bool iValid;
@@ -43,7 +43,7 @@ public:
     static QStringList toStringList(QList<QDBusObjectPath> aList);
     static QList<QDBusObjectPath> toPathList(QStringList aList);
 
-    void presentSimsChanged(QOfonoExtBoolList aOldList);
+    void presentSimsChanged(QList<bool> aOldList);
     void updateSimCounts();
 
 private Q_SLOTS:
@@ -197,8 +197,8 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
             Q_EMIT iParent->defaultVoiceModemChanged(iDefaultVoiceModem);
         }
 
-        QOfonoExtBoolList oldList = iPresentSims;
-        iPresentSims = reply.argumentAt<7>();
+        QList<bool> oldList = iPresentSims;
+        iPresentSims = (QList<bool>)reply.argumentAt<7>();
         presentSimsChanged(oldList);
 
         if (!iValid) {
@@ -209,7 +209,7 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
     aWatcher->deleteLater();
 }
 
-void QOfonoExtModemManager::Private::presentSimsChanged(QOfonoExtBoolList aOldList)
+void QOfonoExtModemManager::Private::presentSimsChanged(QList<bool> aOldList)
 {
     int i;
     const int n = iPresentSims.count();
@@ -297,7 +297,7 @@ void QOfonoExtModemManager::Private::onDefaultVoiceSimChanged(QString aImsi)
 void QOfonoExtModemManager::Private::onPresentSimsChanged(int aIndex, bool aPresent)
 {
     if (aIndex >= 0 && aIndex < iPresentSims.count()) {
-        QOfonoExtBoolList oldList = iPresentSims;
+        QList<bool> oldList = iPresentSims;
         iPresentSims[aIndex] = aPresent;
         presentSimsChanged(oldList);
     }
@@ -352,7 +352,7 @@ QString QOfonoExtModemManager::defaultDataSim() const
     return iPrivate->iDefaultDataSim;
 }
 
-QOfonoExtBoolList QOfonoExtModemManager::presentSims() const
+QList<bool> QOfonoExtModemManager::presentSims() const
 {
     return iPrivate->iPresentSims;
 }

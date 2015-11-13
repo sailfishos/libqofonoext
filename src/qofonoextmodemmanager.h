@@ -28,7 +28,7 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
     Q_PROPERTY(QString defaultVoiceModem READ defaultVoiceModem NOTIFY defaultVoiceModemChanged)
     Q_PROPERTY(QString defaultDataSim READ defaultDataSim WRITE setDefaultDataSim NOTIFY defaultDataSimChanged)
     Q_PROPERTY(QString defaultVoiceSim READ defaultVoiceSim WRITE setDefaultVoiceSim NOTIFY defaultVoiceSimChanged)
-    Q_PROPERTY(QOfonoExtBoolList presentSims READ presentSims NOTIFY presentSimsChanged)
+    Q_PROPERTY(QList<bool> presentSims READ presentSims NOTIFY presentSimsChanged)
     Q_PROPERTY(int presentSimCount READ presentSimCount NOTIFY presentSimCountChanged)
     Q_PROPERTY(int activeSimCount READ activeSimCount NOTIFY activeSimCountChanged)
 
@@ -43,7 +43,7 @@ public:
     QString defaultVoiceModem() const;
     QString defaultDataSim() const;
     QString defaultVoiceSim() const;
-    QOfonoExtBoolList presentSims() const;
+    QList<bool> presentSims() const;
     int presentSimCount() const;
     int activeSimCount() const;
 
