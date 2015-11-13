@@ -1,7 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2015 Jolla Ltd.
-** Contact: slava.monich@jollamobile.com
+** Contact: slava.monich@jolla.com
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -34,6 +34,7 @@ public:
     QString iDefaultVoiceSim;
     QString iDefaultDataSim;
     QList<bool> iPresentSims;
+    QStringList iIMEIs;
     int iPresentSimCount;
     int iActiveSimCount;
     bool iValid;
@@ -109,7 +110,7 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
         iProxy = new QOfonoExtModemManagerProxy(OFONO_SERVICE, "/", OFONO_BUS, this);
         if (iProxy->isValid()) {
             iValid = false;
-            connect(new QDBusPendingCallWatcher(iProxy->GetAll2(), iProxy),
+            connect(new QDBusPendingCallWatcher(iProxy->GetAll3(), iProxy),
                 SIGNAL(finished(QDBusPendingCallWatcher*)),
                 SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
             connect(iProxy,
@@ -200,6 +201,13 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         QList<bool> oldList = iPresentSims;
         iPresentSims = reply.argumentAt<7>();
         presentSimsChanged(oldList);
+
+        // QDBusPendingReply template doesn't support more than 8 arguments
+        list = reply.argumentAt(8).toStringList();
+        if (iIMEIs != list) {
+            iIMEIs = list;
+            Q_EMIT iParent->imeiCodesChanged(iIMEIs);
+        }
 
         if (!iValid) {
             iValid = true;
@@ -357,6 +365,11 @@ QList<bool> QOfonoExtModemManager::presentSims() const
     return iPrivate->iPresentSims;
 }
 
+QStringList QOfonoExtModemManager::imeiCodes() const
+{
+    return iPrivate->iIMEIs;
+}
+
 int QOfonoExtModemManager::presentSimCount() const
 {
     return iPrivate->iPresentSimCount;
@@ -365,6 +378,15 @@ int QOfonoExtModemManager::presentSimCount() const
 int QOfonoExtModemManager::activeSimCount() const
 {
     return iPrivate->iActiveSimCount;
+}
+
+QString QOfonoExtModemManager::imeiAt(int aIndex) const
+{
+    if (aIndex >= 0 && aIndex < iPrivate->iIMEIs.count()) {
+        return iPrivate->iIMEIs.at(aIndex);
+    } else {
+        return QString();
+    }
 }
 
 bool QOfonoExtModemManager::simPresentAt(int aIndex) const
