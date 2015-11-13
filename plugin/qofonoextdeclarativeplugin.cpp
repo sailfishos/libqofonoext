@@ -15,7 +15,7 @@
 
 #include "qofonoextdeclarativeplugin.h"
 #include "qofonoextmodemlistmodel.h"
-#include "qofonoextdeclarativemodemmanager.h"
+#include "qofonoextmodemmanager.h"
 #include "qofonoextsimsettings.h"
 
 #include <QtQml>
@@ -23,7 +23,7 @@
 void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri, int aMajor, int aMinor)
 {
     Q_ASSERT(QLatin1String(aUri) == "org.nemomobile.ofono");
-    qmlRegisterType<QOfonoExtDeclarativeModemManager>(aUri, aMajor, aMinor, "OfonoModemManager");
+    qmlRegisterType<QOfonoExtModemManager>(aUri, aMajor, aMinor, "OfonoModemManager");
     qmlRegisterType<QOfonoExtModemListModel>(aUri, aMajor, aMinor, "OfonoModemListModel");
     qmlRegisterType<QOfonoExtSimSettings>(aUri, aMajor, aMinor, "OfonoSimSettings");
 }
