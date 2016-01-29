@@ -20,8 +20,5 @@
         <signal name="DisplayNameChanged">
             <arg name="name" type="s"/>
         </signal>
-        <signal name="Enable4GChanged">
-            <arg name="enabled" type="b"/>
-        </signal>
     </interface>
 </node>
