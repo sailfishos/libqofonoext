@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 Jolla Ltd.
+** Copyright (C) 2015-2016 Jolla Ltd.
 ** Contact: slava.monich@jollamobile.com
 **
 ** GNU Lesser General Public License Usage
@@ -45,7 +45,6 @@ private Q_SLOTS:
     void checkInterfacePresence();
     void onGetAllFinished(QDBusPendingCallWatcher* aWatcher);
     void onDisplayNameChanged(QString aName);
-    void onEnable4GChanged(bool aEnable);
 };
 
 QOfonoExtSimSettings::Private::Private(QOfonoExtSimSettings* aParent) :
@@ -92,9 +91,6 @@ void QOfonoExtSimSettings::Private::checkInterfacePresence()
                 connect(new QDBusPendingCallWatcher(iProxy->GetAll(), iProxy),
                     SIGNAL(finished(QDBusPendingCallWatcher*)),
                     SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
-                connect(iProxy,
-                    SIGNAL(Enable4GChanged(bool)),
-                    SLOT(onEnable4GChanged(bool)));
                 connect(iProxy,
                     SIGNAL(DisplayNameChanged(QString)),
                     SLOT(onDisplayNameChanged(QString)));
@@ -164,12 +160,6 @@ void QOfonoExtSimSettings::Private::onDisplayNameChanged(QString aName)
         iDisplayName = aName;
         Q_EMIT iParent->displayNameChanged(aName);
     }
-}
-
-void QOfonoExtSimSettings::Private::onEnable4GChanged(bool aEnable)
-{
-    iEnable4G = aEnable;
-    Q_EMIT iParent->enable4GChanged(aEnable);
 }
 
 // ==========================================================================
