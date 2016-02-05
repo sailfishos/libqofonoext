@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 Jolla Ltd.
+** Copyright (C) 2015-2016 Jolla Ltd.
 ** Contact: slava.monichi@jolla.com
 **
 ** GNU Lesser General Public License Usage
@@ -17,6 +17,7 @@
 #include "qofonoextmodemlistmodel.h"
 #include "qofonoextmodemmanager.h"
 #include "qofonoextsimsettings.h"
+#include "qofonoextsiminfo.h"
 
 #include <QtQml>
 
@@ -26,6 +27,7 @@ void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri, int aMajor, int
     qmlRegisterType<QOfonoExtModemManager>(aUri, aMajor, aMinor, "OfonoModemManager");
     qmlRegisterType<QOfonoExtModemListModel>(aUri, aMajor, aMinor, "OfonoModemListModel");
     qmlRegisterType<QOfonoExtSimSettings>(aUri, aMajor, aMinor, "OfonoSimSettings");
+    qmlRegisterType<QOfonoExtSimInfo>(aUri, aMajor, aMinor, "OfonoSimInfo");
 }
 
 void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri)
