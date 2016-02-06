@@ -18,6 +18,7 @@
 #include "qofonoextmodemmanager.h"
 #include "qofonoextsimsettings.h"
 #include "qofonoextsiminfo.h"
+#include "qofonoextsimlistmodel.h"
 
 #include <QtQml>
 
@@ -28,6 +29,7 @@ void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri, int aMajor, int
     qmlRegisterType<QOfonoExtModemListModel>(aUri, aMajor, aMinor, "OfonoModemListModel");
     qmlRegisterType<QOfonoExtSimSettings>(aUri, aMajor, aMinor, "OfonoSimSettings");
     qmlRegisterType<QOfonoExtSimInfo>(aUri, aMajor, aMinor, "OfonoSimInfo");
+    qmlRegisterType<QOfonoExtSimListModel>(aUri, aMajor, aMinor, "OfonoExtSimListModel");
 }
 
 void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri)
