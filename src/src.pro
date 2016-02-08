@@ -18,6 +18,7 @@ isEmpty(PREFIX) {
 
 XML_FILES += \
     dbus/org.nemomobile.ofono.ModemManager.xml \
+    dbus/org.nemomobile.ofono.SimInfo.xml \
     dbus/org.nemomobile.ofono.SimSettings.xml
 
 OTHER_FILES += $$XML_FILES\
@@ -26,10 +27,12 @@ OTHER_FILES += $$XML_FILES\
 
 SOURCES += \
     qofonoextmodemmanager.cpp \
+    qofonoextsiminfo.cpp \
     qofonoextsimsettings.cpp
 
 PUBLIC_HEADERS += \
     qofonoextmodemmanager.h \
+    qofonoextsiminfo.h \
     qofonoextsimsettings.h \
     qofonoext_types.h
 
@@ -47,6 +50,11 @@ org_nemomobile_ofono_sim_settings.files = dbus/org.nemomobile.ofono.SimSettings.
 org_nemomobile_ofono_sim_settings.header_flags = -N -c QOfonoExtSimSettingsProxy
 org_nemomobile_ofono_sim_settings.source_flags = -N -c QOfonoExtSimSettingsProxy
 
+DBUS_INTERFACES += org_nemomobile_ofono_sim_info
+org_nemomobile_ofono_sim_info.files = dbus/org.nemomobile.ofono.SimInfo.xml
+org_nemomobile_ofono_sim_info.header_flags = -N -c QOfonoExtSimInfoProxy
+org_nemomobile_ofono_sim_info.source_flags = -N -c QOfonoExtSimInfoProxy
+
 target.path = $$[QT_INSTALL_LIBS]
 
 headers.files = $$PUBLIC_HEADERS
@@ -58,7 +66,7 @@ pkgconfig.path = $$[QT_INSTALL_LIBS]/pkgconfig
 QMAKE_PKGCONFIG_NAME = $$TARGET
 QMAKE_PKGCONFIG_DESTDIR = pkgconfig
 QMAKE_PKGCONFIG_INCDIR = $$headers.path
-QMAKE_PKGCONFIG_DESCRIPTION = Qt bindings got ofono extensions
+QMAKE_PKGCONFIG_DESCRIPTION = Qt bindings for ofono extensions
 QMAKE_PKGCONFIG_PREFIX = $$PREFIX
 QMAKE_PKGCONFIG_VERSION = $$VERSION
 

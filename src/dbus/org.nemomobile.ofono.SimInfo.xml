@@ -1,0 +1,33 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+    <interface name="org.nemomobile.ofono.SimInfo">
+        <method name="GetAll">
+            <arg name="version" type="i" direction="out"/>
+            <arg name="iccid" type="s" direction="out"/>
+            <arg name="imsi" type="s" direction="out"/>
+            <arg name="spn" type="s" direction="out"/>
+        </method>
+        <method name="GetInterfaceVersion">
+            <arg name="version" type="i" direction="out"/>
+        </method>
+        <method name="GetCardIdentifier">
+            <arg name="iccid" type="s" direction="out"/>
+        </method>
+        <method name="GetSubscriberIdentity">
+            <arg name="imsi" type="s" direction="out"/>
+        </method>
+        <method name="GetServiceProviderName">
+            <arg name="spn" type="s" direction="out"/>
+        </method>
+        <signal name="CardIdentifierChanged">
+            <arg name="iccid" type="s"/>
+        </signal>
+        <signal name="SubscriberIdentityChanged">
+            <arg name="imsi" type="s"/>
+        </signal>
+        <signal name="ServiceProviderNameChanged">
+            <arg name="spn" type="s"/>
+        </signal>
+    </interface>
+</node>
