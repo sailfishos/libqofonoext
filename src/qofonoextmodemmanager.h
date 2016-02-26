@@ -32,6 +32,7 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
     Q_PROPERTY(QStringList imeiCodes READ imeiCodes NOTIFY imeiCodesChanged)
     Q_PROPERTY(QString mmsSim READ mmsSim NOTIFY mmsSimChanged)
     Q_PROPERTY(QString mmsModem READ mmsModem NOTIFY mmsModemChanged)
+    Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
     Q_PROPERTY(int presentSimCount READ presentSimCount NOTIFY presentSimCountChanged)
     Q_PROPERTY(int activeSimCount READ activeSimCount NOTIFY activeSimCountChanged)
 
@@ -50,6 +51,7 @@ public:
     QStringList imeiCodes() const;
     QString mmsSim() const;
     QString mmsModem() const;
+    bool ready() const;
     int presentSimCount() const;
     int activeSimCount() const;
 
@@ -77,6 +79,7 @@ Q_SIGNALS:
     void imeiCodesChanged(QStringList value);
     void mmsSimChanged(QString value);
     void mmsModemChanged(QString value);
+    void readyChanged(bool value);
 
 private:
     class Private;

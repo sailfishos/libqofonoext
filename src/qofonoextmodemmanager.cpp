@@ -39,6 +39,7 @@ public:
     QString iMmsModem;
     int iPresentSimCount;
     int iActiveSimCount;
+    bool iReady;
     bool iValid;
 
     Private(QOfonoExtModemManager* aParent);
@@ -62,6 +63,7 @@ private Q_SLOTS:
     void onPresentSimsChanged(int aIndex, bool aPresent);
     void onMmsSimChanged(QString aImsi);
     void onMmsModemChanged(QString aModemPath);
+    void onReadyChanged(bool aReady);
 };
 
 QWeakPointer<QOfonoExtModemManager> QOfonoExtModemManager::Private::sSharedInstance;
@@ -92,6 +94,7 @@ QOfonoExtModemManager::Private::Private(QOfonoExtModemManager* aParent) :
     iProxy(NULL),
     iPresentSimCount(0),
     iActiveSimCount(0),
+    iReady(false),
     iValid(false)
 {
     QDBusServiceWatcher* ofonoWatcher = new QDBusServiceWatcher(OFONO_SERVICE,
@@ -147,7 +150,8 @@ void QOfonoExtModemManager::Private::onGetInterfaceVersionFinished(QDBusPendingC
     connect(new QDBusPendingCallWatcher(
         (version == 2) ? QDBusPendingCall(iProxy->GetAll2()) :
         (version == 3) ? QDBusPendingCall(iProxy->GetAll3()) :
-        QDBusPendingCall(iProxy->GetAll4()), iProxy),
+        (version == 4) ? QDBusPendingCall(iProxy->GetAll4()) :
+        QDBusPendingCall(iProxy->GetAll5()), iProxy),
         SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
     aWatcher->deleteLater();
@@ -204,6 +208,7 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         presentSimsChanged(oldList);
 
         if (version >= 3) {
+            // 8: imei
             list = reply.argumentAt(8).toStringList();
             if (iIMEIs != list) {
                 iIMEIs = list;
@@ -231,6 +236,8 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
             SLOT(onPresentSimsChanged(int,bool)));
 
         if (version >= 4) {
+            // 9: mmsSim
+            // 10: mmsModem
             imsi = reply.argumentAt(9).toString();
             if (iMmsSim != imsi) {
                 iMmsSim = imsi;
@@ -249,6 +256,22 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
             connect(iProxy,
                 SIGNAL(MmsModemChanged(QString)),
                 SLOT(onMmsModemChanged(QString)));
+        }
+
+        const bool wasReady = iReady;
+        if (version >= 5) {
+            // 11: ready
+            iReady = reply.argumentAt(11).toBool();
+            connect(iProxy,
+                SIGNAL(ReadyChanged(bool)),
+                SLOT(onReadyChanged(bool)));
+        } else {
+            // Old ofono is always ready :)
+            iReady = true;
+        }
+
+        if (iReady != wasReady) {
+            Q_EMIT iParent->readyChanged(iReady);
         }
 
         if (!iValid) {
@@ -369,6 +392,14 @@ void QOfonoExtModemManager::Private::onMmsModemChanged(QString aModemPath)
     }
 }
 
+void QOfonoExtModemManager::Private::onReadyChanged(bool aReady)
+{
+    if (iReady != aReady) {
+        iReady = aReady;
+        Q_EMIT iParent->readyChanged(aReady);
+    }
+}
+
 // ==========================================================================
 // QOfonoExtModemManager
 // ==========================================================================
@@ -436,6 +467,11 @@ QString QOfonoExtModemManager::mmsSim() const
 QString QOfonoExtModemManager::mmsModem() const
 {
     return iPrivate->iMmsModem;
+}
+
+bool QOfonoExtModemManager::ready() const
+{
+    return iPrivate->iReady;
 }
 
 int QOfonoExtModemManager::presentSimCount() const
