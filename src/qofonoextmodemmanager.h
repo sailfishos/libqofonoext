@@ -1,7 +1,7 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 Jolla Ltd.
-** Contact: slava.monich@jolla.com
+** Copyright (C) 2015-2016 Jolla Ltd.
+** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -30,6 +30,8 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
     Q_PROPERTY(QString defaultVoiceSim READ defaultVoiceSim WRITE setDefaultVoiceSim NOTIFY defaultVoiceSimChanged)
     Q_PROPERTY(QList<bool> presentSims READ presentSims NOTIFY presentSimsChanged)
     Q_PROPERTY(QStringList imeiCodes READ imeiCodes NOTIFY imeiCodesChanged)
+    Q_PROPERTY(QString mmsSim READ mmsSim NOTIFY mmsSimChanged)
+    Q_PROPERTY(QString mmsModem READ mmsModem NOTIFY mmsModemChanged)
     Q_PROPERTY(int presentSimCount READ presentSimCount NOTIFY presentSimCountChanged)
     Q_PROPERTY(int activeSimCount READ activeSimCount NOTIFY activeSimCountChanged)
 
@@ -46,6 +48,8 @@ public:
     QString defaultVoiceSim() const;
     QList<bool> presentSims() const;
     QStringList imeiCodes() const;
+    QString mmsSim() const;
+    QString mmsModem() const;
     int presentSimCount() const;
     int activeSimCount() const;
 
@@ -71,6 +75,8 @@ Q_SIGNALS:
     void presentSimCountChanged(int value);
     void activeSimCountChanged(int value);
     void imeiCodesChanged(QStringList value);
+    void mmsSimChanged(QString value);
+    void mmsModemChanged(QString value);
 
 private:
     class Private;
