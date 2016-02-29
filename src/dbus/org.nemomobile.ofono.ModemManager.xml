@@ -26,6 +26,14 @@
             <arg name="version" type="i" direction="out"/>
             <arg name="otherValues" type="aoaossssabas" direction="out"/>
         </method>
+        <method name="GetAll4">
+            <arg name="version" type="i" direction="out"/>
+            <arg name="otherValues" type="aoaossssabasss" direction="out"/>
+        </method>
+        <method name="GetAll5">
+            <arg name="version" type="i" direction="out"/>
+            <arg name="otherValues" type="aoaossssabasssb" direction="out"/>
+        </method>
         <method name="GetInterfaceVersion">
             <arg name="version" type="i" direction="out"/>
         </method>
@@ -48,11 +56,20 @@
         <method name="GetDefaultVoiceSim">
             <arg name="imsi" type="s" direction="out"/>
         </method>
+        <method name="GetMmsSim">
+            <arg name="imsi" type="s" direction="out"/>
+        </method>
         <method name="GetDefaultDataModem">
             <arg name="path" type="s" direction="out"/>
         </method>
         <method name="GetDefaultVoiceModem">
             <arg name="path" type="s" direction="out"/>
+        </method>
+        <method name="GetMmsModem">
+            <arg name="path" type="s" direction="out"/>
+        </method>
+        <method name="GetReady">
+            <arg name="ready" type="b" direction="out"/>
         </method>
         <method name="SetEnabledModems">
             <arg name="modems" type="ao" direction="in"/>
@@ -81,6 +98,15 @@
         </signal>
         <signal name="DefaultVoiceModemChanged">
             <arg name="path" type="s"/>
+        </signal>
+        <signal name="MmsSimChanged">
+            <arg name="imsi" type="s"/>
+        </signal>
+        <signal name="MmsModemChanged">
+            <arg name="path" type="s"/>
+        </signal>
+        <signal name="ReadyChanged">
+            <arg name="ready" type="b"/>
         </signal>
     </interface>
 </node>

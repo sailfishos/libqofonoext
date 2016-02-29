@@ -1,7 +1,7 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 Jolla Ltd.
-** Contact: slava.monich@jolla.com
+** Copyright (C) 2015-2016 Jolla Ltd.
+** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -35,8 +35,11 @@ public:
     QString iDefaultDataSim;
     QList<bool> iPresentSims;
     QStringList iIMEIs;
+    QString iMmsSim;
+    QString iMmsModem;
     int iPresentSimCount;
     int iActiveSimCount;
+    bool iReady;
     bool iValid;
 
     Private(QOfonoExtModemManager* aParent);
@@ -50,6 +53,7 @@ public:
 private Q_SLOTS:
     void onServiceRegistered();
     void onServiceUnregistered();
+    void onGetInterfaceVersionFinished(QDBusPendingCallWatcher* aWatcher);
     void onGetAllFinished(QDBusPendingCallWatcher* aWatcher);
     void onEnabledModemsChanged(QList<QDBusObjectPath> aModems);
     void onDefaultVoiceModemChanged(QString aModemPath);
@@ -57,6 +61,9 @@ private Q_SLOTS:
     void onDefaultVoiceSimChanged(QString aImsi);
     void onDefaultDataSimChanged(QString aImsi);
     void onPresentSimsChanged(int aIndex, bool aPresent);
+    void onMmsSimChanged(QString aImsi);
+    void onMmsModemChanged(QString aModemPath);
+    void onReadyChanged(bool aReady);
 };
 
 QWeakPointer<QOfonoExtModemManager> QOfonoExtModemManager::Private::sSharedInstance;
@@ -87,6 +94,7 @@ QOfonoExtModemManager::Private::Private(QOfonoExtModemManager* aParent) :
     iProxy(NULL),
     iPresentSimCount(0),
     iActiveSimCount(0),
+    iReady(false),
     iValid(false)
 {
     QDBusServiceWatcher* ofonoWatcher = new QDBusServiceWatcher(OFONO_SERVICE,
@@ -110,27 +118,9 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
         iProxy = new QOfonoExtModemManagerProxy(OFONO_SERVICE, "/", OFONO_BUS, this);
         if (iProxy->isValid()) {
             iValid = false;
-            connect(new QDBusPendingCallWatcher(iProxy->GetAll3(), iProxy),
+            connect(new QDBusPendingCallWatcher(iProxy->GetInterfaceVersion(), iProxy),
                 SIGNAL(finished(QDBusPendingCallWatcher*)),
-                SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
-            connect(iProxy,
-                SIGNAL(EnabledModemsChanged(QList<QDBusObjectPath>)),
-                SLOT(onEnabledModemsChanged(QList<QDBusObjectPath>)));
-            connect(iProxy,
-                SIGNAL(DefaultDataModemChanged(QString)),
-                SLOT(onDefaultDataModemChanged(QString)));
-            connect(iProxy,
-                SIGNAL(DefaultVoiceModemChanged(QString)),
-                SLOT(onDefaultVoiceModemChanged(QString)));
-            connect(iProxy,
-                SIGNAL(DefaultDataSimChanged(QString)),
-                SLOT(onDefaultDataSimChanged(QString)));
-            connect(iProxy,
-                SIGNAL(DefaultVoiceSimChanged(QString)),
-                SLOT(onDefaultVoiceSimChanged(QString)));
-            connect(iProxy,
-                SIGNAL(PresentSimsChanged(int,bool)),
-                SLOT(onPresentSimsChanged(int,bool)));
+                SLOT(onGetInterfaceVersionFinished(QDBusPendingCallWatcher*)));
         } else {
             delete iProxy;
             iProxy = NULL;
@@ -143,14 +133,28 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
 
 void QOfonoExtModemManager::Private::onServiceUnregistered()
 {
-    if (iValid) {
-        iValid = false;
-        Q_EMIT iParent->validChanged(iValid);
-    }
     if (iProxy) {
         delete iProxy;
         iProxy = NULL;
     }
+    if (iValid) {
+        iValid = false;
+        Q_EMIT iParent->validChanged(iValid);
+    }
+}
+
+void QOfonoExtModemManager::Private::onGetInterfaceVersionFinished(QDBusPendingCallWatcher* aWatcher)
+{
+    QDBusPendingReply<int> reply(*aWatcher);
+    const int version = reply.argumentAt<0>();
+    connect(new QDBusPendingCallWatcher(
+        (version == 2) ? QDBusPendingCall(iProxy->GetAll2()) :
+        (version == 3) ? QDBusPendingCall(iProxy->GetAll3()) :
+        (version == 4) ? QDBusPendingCall(iProxy->GetAll4()) :
+        QDBusPendingCall(iProxy->GetAll5()), iProxy),
+        SIGNAL(finished(QDBusPendingCallWatcher*)),
+        SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
+    aWatcher->deleteLater();
 }
 
 void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatcher)
@@ -167,6 +171,7 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
     if (reply.isError()) {
         qWarning() << reply.error();
     } else {
+        const int version = reply.argumentAt<0>();
         QStringList list = toStringList(reply.argumentAt<1>());
         if (iAvailableModems != list) {
             iAvailableModems = list;
@@ -202,11 +207,71 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         iPresentSims = reply.argumentAt<7>();
         presentSimsChanged(oldList);
 
-        // QDBusPendingReply template doesn't support more than 8 arguments
-        list = reply.argumentAt(8).toStringList();
-        if (iIMEIs != list) {
-            iIMEIs = list;
-            Q_EMIT iParent->imeiCodesChanged(iIMEIs);
+        if (version >= 3) {
+            // 8: imei
+            list = reply.argumentAt(8).toStringList();
+            if (iIMEIs != list) {
+                iIMEIs = list;
+                Q_EMIT iParent->imeiCodesChanged(iIMEIs);
+            }
+        }
+
+        connect(iProxy,
+            SIGNAL(EnabledModemsChanged(QList<QDBusObjectPath>)),
+            SLOT(onEnabledModemsChanged(QList<QDBusObjectPath>)));
+        connect(iProxy,
+            SIGNAL(DefaultDataModemChanged(QString)),
+            SLOT(onDefaultDataModemChanged(QString)));
+        connect(iProxy,
+            SIGNAL(DefaultVoiceModemChanged(QString)),
+            SLOT(onDefaultVoiceModemChanged(QString)));
+        connect(iProxy,
+            SIGNAL(DefaultDataSimChanged(QString)),
+            SLOT(onDefaultDataSimChanged(QString)));
+        connect(iProxy,
+            SIGNAL(DefaultVoiceSimChanged(QString)),
+            SLOT(onDefaultVoiceSimChanged(QString)));
+        connect(iProxy,
+            SIGNAL(PresentSimsChanged(int,bool)),
+            SLOT(onPresentSimsChanged(int,bool)));
+
+        if (version >= 4) {
+            // 9: mmsSim
+            // 10: mmsModem
+            imsi = reply.argumentAt(9).toString();
+            if (iMmsSim != imsi) {
+                iMmsSim = imsi;
+                Q_EMIT iParent->mmsSimChanged(iMmsSim);
+            }
+
+            path = reply.argumentAt(10).toString();
+            if (iMmsModem != path) {
+                iMmsModem = path;
+                Q_EMIT iParent->mmsModemChanged(iMmsModem);
+            }
+
+            connect(iProxy,
+                SIGNAL(MmsSimChanged(QString)),
+                SLOT(onMmsSimChanged(QString)));
+            connect(iProxy,
+                SIGNAL(MmsModemChanged(QString)),
+                SLOT(onMmsModemChanged(QString)));
+        }
+
+        const bool wasReady = iReady;
+        if (version >= 5) {
+            // 11: ready
+            iReady = reply.argumentAt(11).toBool();
+            connect(iProxy,
+                SIGNAL(ReadyChanged(bool)),
+                SLOT(onReadyChanged(bool)));
+        } else {
+            // Old ofono is always ready :)
+            iReady = true;
+        }
+
+        if (iReady != wasReady) {
+            Q_EMIT iParent->readyChanged(iReady);
         }
 
         if (!iValid) {
@@ -311,6 +376,30 @@ void QOfonoExtModemManager::Private::onPresentSimsChanged(int aIndex, bool aPres
     }
 }
 
+void QOfonoExtModemManager::Private::onMmsSimChanged(QString aImsi)
+{
+    if (iMmsSim != aImsi) {
+        iMmsSim = aImsi;
+        Q_EMIT iParent->mmsSimChanged(aImsi);
+    }
+}
+
+void QOfonoExtModemManager::Private::onMmsModemChanged(QString aModemPath)
+{
+    if (iMmsModem != aModemPath) {
+        iMmsModem = aModemPath;
+        Q_EMIT iParent->mmsModemChanged(aModemPath);
+    }
+}
+
+void QOfonoExtModemManager::Private::onReadyChanged(bool aReady)
+{
+    if (iReady != aReady) {
+        iReady = aReady;
+        Q_EMIT iParent->readyChanged(aReady);
+    }
+}
+
 // ==========================================================================
 // QOfonoExtModemManager
 // ==========================================================================
@@ -368,6 +457,21 @@ QList<bool> QOfonoExtModemManager::presentSims() const
 QStringList QOfonoExtModemManager::imeiCodes() const
 {
     return iPrivate->iIMEIs;
+}
+
+QString QOfonoExtModemManager::mmsSim() const
+{
+    return iPrivate->iMmsSim;
+}
+
+QString QOfonoExtModemManager::mmsModem() const
+{
+    return iPrivate->iMmsModem;
+}
+
+bool QOfonoExtModemManager::ready() const
+{
+    return iPrivate->iReady;
 }
 
 int QOfonoExtModemManager::presentSimCount() const
