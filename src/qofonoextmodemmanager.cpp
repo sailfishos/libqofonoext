@@ -39,6 +39,7 @@ public:
     QString iMmsModem;
     int iPresentSimCount;
     int iActiveSimCount;
+    int iInterfaceVersion;
     bool iReady;
     bool iValid;
 
@@ -46,9 +47,12 @@ public:
 
     static QStringList toStringList(QList<QDBusObjectPath> aList);
     static QList<QDBusObjectPath> toPathList(QStringList aList);
+    static bool isTimeout(QDBusError aError);
 
     void presentSimsChanged(QList<bool> aOldList);
     void updateSimCounts();
+    void getAll();
+    void getInterfaceVersion();
 
 private Q_SLOTS:
     void onServiceRegistered();
@@ -94,6 +98,7 @@ QOfonoExtModemManager::Private::Private(QOfonoExtModemManager* aParent) :
     iProxy(NULL),
     iPresentSimCount(0),
     iActiveSimCount(0),
+    iInterfaceVersion(0),
     iReady(false),
     iValid(false)
 {
@@ -118,9 +123,7 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
         iProxy = new QOfonoExtModemManagerProxy(OFONO_SERVICE, "/", OFONO_BUS, this);
         if (iProxy->isValid()) {
             iValid = false;
-            connect(new QDBusPendingCallWatcher(iProxy->GetInterfaceVersion(), iProxy),
-                SIGNAL(finished(QDBusPendingCallWatcher*)),
-                SLOT(onGetInterfaceVersionFinished(QDBusPendingCallWatcher*)));
+            getInterfaceVersion();
         } else {
             delete iProxy;
             iProxy = NULL;
@@ -143,17 +146,49 @@ void QOfonoExtModemManager::Private::onServiceUnregistered()
     }
 }
 
-void QOfonoExtModemManager::Private::onGetInterfaceVersionFinished(QDBusPendingCallWatcher* aWatcher)
+bool QOfonoExtModemManager::Private::isTimeout(QDBusError aError)
 {
-    QDBusPendingReply<int> reply(*aWatcher);
-    const int version = reply.argumentAt<0>();
+    switch (aError.type()) {
+    case QDBusError::NoReply:
+    case QDBusError::Timeout:
+    case QDBusError::TimedOut:
+        return true;
+    default:
+        return false;
+    }
+}
+
+void QOfonoExtModemManager::Private::getInterfaceVersion()
+{
+    connect(new QDBusPendingCallWatcher(iProxy->GetInterfaceVersion(), iProxy),
+        SIGNAL(finished(QDBusPendingCallWatcher*)),
+        SLOT(onGetInterfaceVersionFinished(QDBusPendingCallWatcher*)));
+}
+
+void QOfonoExtModemManager::Private::getAll()
+{
     connect(new QDBusPendingCallWatcher(
-        (version == 2) ? QDBusPendingCall(iProxy->GetAll2()) :
-        (version == 3) ? QDBusPendingCall(iProxy->GetAll3()) :
-        (version == 4) ? QDBusPendingCall(iProxy->GetAll4()) :
+        (iInterfaceVersion == 2) ? QDBusPendingCall(iProxy->GetAll2()) :
+        (iInterfaceVersion == 3) ? QDBusPendingCall(iProxy->GetAll3()) :
+        (iInterfaceVersion == 4) ? QDBusPendingCall(iProxy->GetAll4()) :
         QDBusPendingCall(iProxy->GetAll5()), iProxy),
         SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
+}
+
+void QOfonoExtModemManager::Private::onGetInterfaceVersionFinished(QDBusPendingCallWatcher* aWatcher)
+{
+    QDBusPendingReply<int> reply(*aWatcher);
+    iInterfaceVersion = reply.argumentAt<0>();
+    if (reply.isError()) {
+        // Repeat the call on timeout
+        qWarning() << reply.error();
+        if (isTimeout(reply.error())) {
+            getInterfaceVersion();
+        }
+    } else {
+        getAll();
+    }
     aWatcher->deleteLater();
 }
 
@@ -169,7 +204,11 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         QList<bool> >           // PresentSims
         reply(*aWatcher);
     if (reply.isError()) {
+        // Repeat the call on timeout
         qWarning() << reply.error();
+        if (isTimeout(reply.error())) {
+            getAll();
+        }
     } else {
         const int version = reply.argumentAt<0>();
         QStringList list = toStringList(reply.argumentAt<1>());
