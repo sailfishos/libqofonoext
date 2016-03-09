@@ -1,11 +1,11 @@
 Name:       libqofonoext
 
 Summary:    A library of Qt bindings for ofono extensions
-Version:    1.0.8
+Version:    1.0.9
 Release:    1
 Group:      System/Libraries
 License:    LGPLv2.1
-URL:        https://github.com/nemomobile/libqofonoext
+URL:        https://git.merproject.org/mer-core/libqofonoext
 Source0:    libqofonoext-%{version}.tar.bz2
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
