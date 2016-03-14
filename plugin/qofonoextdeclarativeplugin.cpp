@@ -1,7 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2015-2016 Jolla Ltd.
-** Contact: slava.monichi@jolla.com
+** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -18,6 +18,9 @@
 #include "qofonoextmodemmanager.h"
 #include "qofonoextsiminfo.h"
 #include "qofonoextsimlistmodel.h"
+#include "qofonoextmodemlistmodel.h"
+#include "qofonoextcellinfo.h"
+#include "qofonoextcell.h"
 
 #include <QtQml>
 
@@ -28,6 +31,8 @@ void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri, int aMajor, int
     qmlRegisterType<QOfonoExtModemListModel>(aUri, aMajor, aMinor, "OfonoModemListModel");
     qmlRegisterType<QOfonoExtSimInfo>(aUri, aMajor, aMinor, "OfonoSimInfo");
     qmlRegisterType<QOfonoExtSimListModel>(aUri, aMajor, aMinor, "OfonoExtSimListModel");
+    qmlRegisterType<QOfonoExtCellInfo>(aUri, aMajor, aMinor, "OfonoExtCellInfo");
+    qmlRegisterType<QOfonoExtCell>(aUri, aMajor, aMinor, "OfonoExtCell");
 }
 
 void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri)

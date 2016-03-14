@@ -1,7 +1,7 @@
 /****************************************************************************
 **
-** Copyright (C) 2015 Jolla Ltd.
-** Contact: slava.monichi@jolla.com
+** Copyright (C) 2015-2016 Jolla Ltd.
+** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
