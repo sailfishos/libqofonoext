@@ -47,7 +47,6 @@ public:
 
     static QStringList toStringList(QList<QDBusObjectPath> aList);
     static QList<QDBusObjectPath> toPathList(QStringList aList);
-    static bool isTimeout(QDBusError aError);
 
     void presentSimsChanged(QList<bool> aOldList);
     void updateSimCounts();
@@ -146,18 +145,6 @@ void QOfonoExtModemManager::Private::onServiceUnregistered()
     }
 }
 
-bool QOfonoExtModemManager::Private::isTimeout(QDBusError aError)
-{
-    switch (aError.type()) {
-    case QDBusError::NoReply:
-    case QDBusError::Timeout:
-    case QDBusError::TimedOut:
-        return true;
-    default:
-        return false;
-    }
-}
-
 void QOfonoExtModemManager::Private::getInterfaceVersion()
 {
     connect(new QDBusPendingCallWatcher(iProxy->GetInterfaceVersion(), iProxy),
@@ -183,7 +170,7 @@ void QOfonoExtModemManager::Private::onGetInterfaceVersionFinished(QDBusPendingC
     if (reply.isError()) {
         // Repeat the call on timeout
         qWarning() << reply.error();
-        if (isTimeout(reply.error())) {
+        if (QOfonoExt::isTimeout(reply.error())) {
             getInterfaceVersion();
         }
     } else {
@@ -206,7 +193,7 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
     if (reply.isError()) {
         // Repeat the call on timeout
         qWarning() << reply.error();
-        if (isTimeout(reply.error())) {
+        if (QOfonoExt::isTimeout(reply.error())) {
             getAll();
         }
     } else {

@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015-2016 Jolla Ltd.
+** Copyright (C) 2016 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -13,21 +13,16 @@
 **
 ****************************************************************************/
 
-#ifndef QOFONOEXTDECLARATIVEPLUGIN_H
-#define QOFONOEXTDECLARATIVEPLUGIN_H
+#include "qofonoext_p.h"
 
-#include "qofonoext_types.h"
-
-#include <QQmlExtensionPlugin>
-
-class QOFONOEXT_EXPORT QOfonoExtDeclarativePlugin : public QQmlExtensionPlugin
+bool QOfonoExt::isTimeout(QDBusError aError)
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID QQmlExtensionInterface_iid)
-
-public:
-    void registerTypes(const char* aUri);
-    static void registerTypes(const char* aUri, int aMajor, int aMinor);
-};
-
-#endif // QOFONOEXTDECLARATIVEPLUGIN_H
+    switch (aError.type()) {
+    case QDBusError::NoReply:
+    case QDBusError::Timeout:
+    case QDBusError::TimedOut:
+        return true;
+    default:
+        return false;
+    }
+}

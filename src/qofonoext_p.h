@@ -25,4 +25,8 @@
 
 typedef QList<bool> QOfonoExtBoolList;
 
+namespace QOfonoExt {
+    bool isTimeout(QDBusError aError);
+}
+
 #endif // QOFONOEXT_PRIVATE_H

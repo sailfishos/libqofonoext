@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015-2016 Jolla Ltd.
+** Copyright (C) 2016 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -13,21 +13,28 @@
 **
 ****************************************************************************/
 
-#ifndef QOFONOEXTDECLARATIVEPLUGIN_H
-#define QOFONOEXTDECLARATIVEPLUGIN_H
+#ifndef QOFONOEXTCELLWATCHER_H
+#define QOFONOEXTCELLWATCHER_H
 
-#include "qofonoext_types.h"
+#include "qofonoextcell.h"
 
-#include <QQmlExtensionPlugin>
-
-class QOFONOEXT_EXPORT QOfonoExtDeclarativePlugin : public QQmlExtensionPlugin
+// Watches available cells from all modems
+class QOFONOEXT_EXPORT QOfonoExtCellWatcher : public QObject
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID QQmlExtensionInterface_iid)
 
 public:
-    void registerTypes(const char* aUri);
-    static void registerTypes(const char* aUri, int aMajor, int aMinor);
+    explicit QOfonoExtCellWatcher(QObject* aParent = NULL);
+    ~QOfonoExtCellWatcher();
+
+    QList<QSharedPointer<QOfonoExtCell> > cells() const;
+
+Q_SIGNALS:
+    void cellsChanged();
+
+private:
+    class Private;
+    Private* iPrivate;
 };
 
-#endif // QOFONOEXTDECLARATIVEPLUGIN_H
+#endif // QOFONOEXTCELLWATCHER_H
