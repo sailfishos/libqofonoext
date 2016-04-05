@@ -39,8 +39,8 @@ private:
 private Q_SLOTS:
     void checkInterfacePresence();
     void onGetCellsFinished(QDBusPendingCallWatcher* aWatcher);
-    void onCellAdded(QDBusObjectPath aPath);
-    void onCellRemoved(QDBusObjectPath aPath);
+    void onCellsAdded(QList<QDBusObjectPath> aCells);
+    void onCellsRemoved(QList<QDBusObjectPath> aCells);
 
 public:
     bool iValid;
@@ -103,11 +103,11 @@ void QOfonoExtCellInfo::Private::checkInterfacePresence()
             iProxy = new QOfonoExtCellInfoProxy(OFONO_SERVICE, iModem->objectPath(), OFONO_BUS, this);
             if (iProxy->isValid()) {
                 connect(iProxy,
-                    SIGNAL(CellAdded(QDBusObjectPath)),
-                    SLOT(onCellAdded(QDBusObjectPath)));
+                    SIGNAL(CellsAdded(QList<QDBusObjectPath>)),
+                    SLOT(onCellsAdded(QList<QDBusObjectPath>)));
                 connect(iProxy,
-                    SIGNAL(CellRemoved(QDBusObjectPath)),
-                    SLOT(onCellRemoved(QDBusObjectPath)));
+                    SIGNAL(CellsRemoved(QList<QDBusObjectPath>)),
+                    SLOT(onCellsRemoved(QList<QDBusObjectPath>)));
                 getCells();
             } else {
                 invalidate();
@@ -158,20 +158,34 @@ void QOfonoExtCellInfo::Private::onGetCellsFinished(QDBusPendingCallWatcher* aWa
     aWatcher->deleteLater();
 }
 
-void QOfonoExtCellInfo::Private::onCellAdded(QDBusObjectPath aPath)
+void QOfonoExtCellInfo::Private::onCellsAdded(QList<QDBusObjectPath> aCells)
 {
-    QString path = aPath.path();
-    if (!iCells.contains(path)) {
-        iCells.append(path);
+    QStringList cells;
+    for (int i=0; i<aCells.count(); i++) {
+        QString path = aCells.at(i).path();
+        if (!iCells.contains(path)) {
+            iCells.append(path);
+            cells.append(path);
+        }
+    }
+    if (!cells.isEmpty()) {
         iCells.sort();
+        Q_EMIT iParent->cellsAdded(cells);
         Q_EMIT iParent->cellsChanged();
     }
 }
 
-void QOfonoExtCellInfo::Private::onCellRemoved(QDBusObjectPath aPath)
+void QOfonoExtCellInfo::Private::onCellsRemoved(QList<QDBusObjectPath> aCells)
 {
-    QString path = aPath.path();
-    if (iCells.removeOne(path)) {
+    QStringList cells;
+    for (int i=0; i<aCells.count(); i++) {
+        QString path = aCells.at(i).path();
+        if (iCells.removeOne(path)) {
+            cells.append(path);
+        }
+    }
+    if (!cells.isEmpty()) {
+        Q_EMIT iParent->cellsRemoved(cells);
         Q_EMIT iParent->cellsChanged();
     }
 }

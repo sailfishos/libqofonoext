@@ -42,8 +42,8 @@ Q_SIGNALS:
     void validChanged();
     void modemPathChanged();
     void cellsChanged();
-    void cellAdded(QString path);
-    void cellRemoved(QString path);
+    void cellsAdded(QStringList cells);
+    void cellsRemoved(QStringList cells);
 
 private:
     class Private;

@@ -5,11 +5,11 @@
         <method name="GetCells">
             <arg name="paths" type="ao" direction="out"/>
         </method>
-        <signal name="CellAdded">
-            <arg name="path" type="o"/>
+        <signal name="CellsAdded">
+            <arg name="paths" type="ao"/>
         </signal>
-        <signal name="CellRemoved">
-            <arg name="path" type="o"/>
+        <signal name="CellsRemoved">
+            <arg name="paths" type="ao"/>
         </signal>
     </interface>
 </node>
