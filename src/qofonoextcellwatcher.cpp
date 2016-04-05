@@ -150,7 +150,7 @@ void QOfonoExtCellWatcher::Private::updateValidCells()
         }
     }
 
-    if (changed) {
+    if (changed && validCells.count() == knownCells.count()) {
         iValidCells.clear();
         for (i=0; i<validCells.count(); i++) {
             iValidCells.append(iKnownCells.value(validCells.at(i)));
