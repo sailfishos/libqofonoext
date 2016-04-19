@@ -122,6 +122,24 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
         iProxy = new QOfonoExtModemManagerProxy(OFONO_SERVICE, "/", OFONO_BUS, this);
         if (iProxy->isValid()) {
             iValid = false;
+            connect(iProxy,
+                SIGNAL(EnabledModemsChanged(QList<QDBusObjectPath>)),
+                SLOT(onEnabledModemsChanged(QList<QDBusObjectPath>)));
+            connect(iProxy,
+                SIGNAL(DefaultDataModemChanged(QString)),
+                SLOT(onDefaultDataModemChanged(QString)));
+            connect(iProxy,
+                SIGNAL(DefaultVoiceModemChanged(QString)),
+                SLOT(onDefaultVoiceModemChanged(QString)));
+            connect(iProxy,
+                SIGNAL(DefaultDataSimChanged(QString)),
+                SLOT(onDefaultDataSimChanged(QString)));
+            connect(iProxy,
+                SIGNAL(DefaultVoiceSimChanged(QString)),
+                SLOT(onDefaultVoiceSimChanged(QString)));
+            connect(iProxy,
+                SIGNAL(PresentSimsChanged(int,bool)),
+                SLOT(onPresentSimsChanged(int,bool)));
             getInterfaceVersion();
         } else {
             delete iProxy;
@@ -241,25 +259,6 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
                 Q_EMIT iParent->imeiCodesChanged(iIMEIs);
             }
         }
-
-        connect(iProxy,
-            SIGNAL(EnabledModemsChanged(QList<QDBusObjectPath>)),
-            SLOT(onEnabledModemsChanged(QList<QDBusObjectPath>)));
-        connect(iProxy,
-            SIGNAL(DefaultDataModemChanged(QString)),
-            SLOT(onDefaultDataModemChanged(QString)));
-        connect(iProxy,
-            SIGNAL(DefaultVoiceModemChanged(QString)),
-            SLOT(onDefaultVoiceModemChanged(QString)));
-        connect(iProxy,
-            SIGNAL(DefaultDataSimChanged(QString)),
-            SLOT(onDefaultDataSimChanged(QString)));
-        connect(iProxy,
-            SIGNAL(DefaultVoiceSimChanged(QString)),
-            SLOT(onDefaultVoiceSimChanged(QString)));
-        connect(iProxy,
-            SIGNAL(PresentSimsChanged(int,bool)),
-            SLOT(onPresentSimsChanged(int,bool)));
 
         if (version >= 4) {
             // 9: mmsSim
