@@ -9,11 +9,11 @@ URL:        https://git.merproject.org/mer-core/libqofonoext
 Source0:    libqofonoext-%{version}.tar.bz2
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-
+Requires:       libqofono-qt5 >= 0.87
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(Qt5Quick)
-BuildRequires:  pkgconfig(qofono-qt5)
+BuildRequires:  pkgconfig(qofono-qt5) >= 0.87
 
 %{!?qtc_qmake5:%define qtc_qmake5 %qmake5}
 %{!?qtc_make:%define qtc_make make}
