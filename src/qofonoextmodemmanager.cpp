@@ -184,7 +184,6 @@ void QOfonoExtModemManager::Private::getAll()
 void QOfonoExtModemManager::Private::onGetInterfaceVersionFinished(QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<int> reply(*aWatcher);
-    iInterfaceVersion = reply.argumentAt<0>();
     if (reply.isError()) {
         // Repeat the call on timeout
         qWarning() << reply.error();
@@ -192,6 +191,11 @@ void QOfonoExtModemManager::Private::onGetInterfaceVersionFinished(QDBusPendingC
             getInterfaceVersion();
         }
     } else {
+        const int version = reply.value();
+        if (iInterfaceVersion != version) {
+            iInterfaceVersion = version;
+            iParent->interfaceVersionChanged(version);
+        }
         getAll();
     }
     aWatcher->deleteLater();
@@ -442,6 +446,11 @@ QOfonoExtModemManager::~QOfonoExtModemManager()
 bool QOfonoExtModemManager::valid() const
 {
     return iPrivate->iValid;
+}
+
+int QOfonoExtModemManager::interfaceVersion() const
+{
+    return iPrivate->iInterfaceVersion;
 }
 
 QStringList QOfonoExtModemManager::availableModems() const

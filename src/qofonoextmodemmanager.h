@@ -22,6 +22,7 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool valid READ valid NOTIFY validChanged)
+    Q_PROPERTY(int interfaceVersion READ interfaceVersion NOTIFY interfaceVersionChanged)
     Q_PROPERTY(QStringList availableModems READ availableModems NOTIFY availableModemsChanged)
     Q_PROPERTY(QStringList enabledModems READ enabledModems WRITE setEnabledModems NOTIFY enabledModemsChanged)
     Q_PROPERTY(QString defaultDataModem READ defaultDataModem NOTIFY defaultDataModemChanged)
@@ -41,6 +42,7 @@ public:
     ~QOfonoExtModemManager();
 
     bool valid() const;
+    int interfaceVersion() const;
     QStringList availableModems() const;
     QStringList enabledModems() const;
     QString defaultDataModem() const;
@@ -66,6 +68,7 @@ public:
 
 Q_SIGNALS:
     void validChanged(bool value);
+    void interfaceVersionChanged(int value);
     void availableModemsChanged(QStringList value);
     void enabledModemsChanged(QStringList value);
     void defaultVoiceModemChanged(QString value);
