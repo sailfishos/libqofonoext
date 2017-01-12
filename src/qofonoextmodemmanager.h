@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015-2016 Jolla Ltd.
+** Copyright (C) 2015-2017 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -36,6 +36,7 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
     Q_PROPERTY(int presentSimCount READ presentSimCount NOTIFY presentSimCountChanged)
     Q_PROPERTY(int activeSimCount READ activeSimCount NOTIFY activeSimCountChanged)
+    Q_PROPERTY(int errorCount READ errorCount NOTIFY errorCountChanged)
 
 public:
     explicit QOfonoExtModemManager(QObject* aParent = NULL);
@@ -56,6 +57,7 @@ public:
     bool ready() const;
     int presentSimCount() const;
     int activeSimCount() const;
+    int errorCount() const;
 
     Q_INVOKABLE QString imeiAt(int aIndex) const;
     Q_INVOKABLE bool simPresentAt(int aIndex) const;
@@ -83,6 +85,8 @@ Q_SIGNALS:
     void mmsSimChanged(QString value);
     void mmsModemChanged(QString value);
     void readyChanged(bool value);
+    void errorCountChanged(int value);
+    void modemError(QString modemPath, QString errorId, QString errorMessage);
 
 private:
     class Private;
