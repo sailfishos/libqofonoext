@@ -16,13 +16,7 @@ isEmpty(PREFIX) {
   PREFIX=/usr
 }
 
-XML_FILES += \
-    dbus/org.nemomobile.ofono.Cell.xml \
-    dbus/org.nemomobile.ofono.CellInfo.xml \
-    dbus/org.nemomobile.ofono.ModemManager.xml \
-    dbus/org.nemomobile.ofono.SimInfo.xml
-
-OTHER_FILES += $$XML_FILES\
+OTHER_FILES += \
     qofonoext.prf \
     version.pri
 
@@ -45,26 +39,6 @@ PUBLIC_HEADERS += \
 HEADERS += \
     $$PUBLIC_HEADERS \
     qofonoext_p.h
-
-DBUS_INTERFACES += org_nemomobile_ofono_cell
-org_nemomobile_ofono_cell.files = dbus/org.nemomobile.ofono.Cell.xml
-org_nemomobile_ofono_cell.header_flags = -N -c QOfonoExtCellProxy
-org_nemomobile_ofono_cell.source_flags = -N -c QOfonoExtCellProxy
-
-DBUS_INTERFACES += org_nemomobile_ofono_cell_info
-org_nemomobile_ofono_cell_info.files = dbus/org.nemomobile.ofono.CellInfo.xml
-org_nemomobile_ofono_cell_info.header_flags = -N -c QOfonoExtCellInfoProxy
-org_nemomobile_ofono_cell_info.source_flags = -N -c QOfonoExtCellInfoProxy
-
-DBUS_INTERFACES += org_nemomobile_ofono_modem_manager
-org_nemomobile_ofono_modem_manager.files = dbus/org.nemomobile.ofono.ModemManager.xml
-org_nemomobile_ofono_modem_manager.header_flags = -N -c QOfonoExtModemManagerProxy -i qofonoext_p.h
-org_nemomobile_ofono_modem_manager.source_flags = -N -c QOfonoExtModemManagerProxy
-
-DBUS_INTERFACES += org_nemomobile_ofono_sim_info
-org_nemomobile_ofono_sim_info.files = dbus/org.nemomobile.ofono.SimInfo.xml
-org_nemomobile_ofono_sim_info.header_flags = -N -c QOfonoExtSimInfoProxy
-org_nemomobile_ofono_sim_info.source_flags = -N -c QOfonoExtSimInfoProxy
 
 target.path = $$[QT_INSTALL_LIBS]
 

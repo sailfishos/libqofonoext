@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 Jolla Ltd.
+** Copyright (C) 2016-2017 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -16,12 +16,44 @@
 #include "qofonoextcellinfo.h"
 #include "qofonoext_p.h"
 
-#include "cellinfo_interface.h"
-
 #include <qofonomodem.h>
 
 typedef QMap<QString,QWeakPointer<QOfonoExtCellInfo> > QOfonoExtCellInfoMap;
 Q_GLOBAL_STATIC(QOfonoExtCellInfoMap, sharedInstances)
+
+// ==========================================================================
+// QOfonoExtCellInfoProxy
+//
+// qdbusxml2cpp doesn't really do much, and has a number of limitations,
+// such as the limits on number of arguments for QDBusPendingReply template.
+// It's easier to write these proxies by hand.
+// ==========================================================================
+
+class QOfonoExtCellInfoProxy: public QDBusAbstractInterface
+{
+    Q_OBJECT
+public:
+    static const QString INTERFACE;
+    QOfonoExtCellInfoProxy(QString aPath, QObject* aParent) :
+        QDBusAbstractInterface(OFONO_SERVICE, aPath, qPrintable(INTERFACE),
+            OFONO_BUS, aParent) {}
+
+public Q_SLOTS: // METHODS
+    QDBusPendingCall GetInterfaceVersion()
+        { return asyncCall("GetInterfaceVersion"); }
+    QDBusPendingCall GetCells()
+        { return asyncCall("GetCells"); }
+
+Q_SIGNALS: // SIGNALS
+    void CellsAdded(QList<QDBusObjectPath> aPaths);
+    void CellsRemoved(QList<QDBusObjectPath> aPaths);
+};
+
+const QString QOfonoExtCellInfoProxy::INTERFACE("org.nemomobile.ofono.CellInfo");
+
+// ==========================================================================
+// QOfonoExtCellInfo::Private
+// ==========================================================================
 
 class QOfonoExtCellInfo::Private : public QObject
 {
@@ -51,7 +83,6 @@ private:
     QOfonoExtCellInfo* iParent;
     QOfonoExtCellInfoProxy* iProxy;
     QSharedPointer<QOfonoModem> iModem;
-    QString iInterfaceName;
 };
 
 QOfonoExtCellInfo::Private::Private(QOfonoExtCellInfo* aParent) :
@@ -59,8 +90,7 @@ QOfonoExtCellInfo::Private::Private(QOfonoExtCellInfo* aParent) :
     iValid(false),
     iFixedPath(false),
     iParent(aParent),
-    iProxy(NULL),
-    iInterfaceName(QOfonoExtCellInfoProxy::staticInterfaceName())
+    iProxy(NULL)
 {
 }
 
@@ -98,9 +128,9 @@ void QOfonoExtCellInfo::Private::getCells()
 void QOfonoExtCellInfo::Private::checkInterfacePresence()
 {
     if (iModem && iModem->isValid() &&
-        iModem->interfaces().contains(iInterfaceName)) {
+        iModem->interfaces().contains(QOfonoExtCellInfoProxy::INTERFACE)) {
         if (!iProxy) {
-            iProxy = new QOfonoExtCellInfoProxy(OFONO_SERVICE, iModem->objectPath(), OFONO_BUS, this);
+            iProxy = new QOfonoExtCellInfoProxy(iModem->objectPath(), this);
             if (iProxy->isValid()) {
                 connect(iProxy,
                     SIGNAL(CellsAdded(QList<QDBusObjectPath>)),

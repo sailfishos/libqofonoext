@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015-2016 Jolla Ltd.
+** Copyright (C) 2015-2017 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -16,7 +16,58 @@
 #include "qofonoextmodemmanager.h"
 #include "qofonoext_p.h"
 
-#include "modemmanager_interface.h"
+// ==========================================================================
+// QOfonoExtModemManagerProxy
+//
+// qdbusxml2cpp doesn't really do much, and has a number of limitations,
+// such as the limits on number of arguments for QDBusPendingReply template.
+// It's easier to write these proxies by hand.
+// ==========================================================================
+
+class QOfonoExtModemManagerProxy: public QDBusAbstractInterface
+{
+    Q_OBJECT
+
+public:
+    QOfonoExtModemManagerProxy(QObject* aParent) :
+        QDBusAbstractInterface(OFONO_SERVICE, "/",
+            "org.nemomobile.ofono.ModemManager", OFONO_BUS, aParent) {}
+
+public Q_SLOTS: // METHODS
+    QDBusPendingCall GetInterfaceVersion()
+        { return asyncCall("GetInterfaceVersion"); }
+    QDBusPendingCall GetAll()
+        { return asyncCall("GetAll"); }
+    QDBusPendingCall GetAll2()
+        { return asyncCall("GetAll2"); }
+    QDBusPendingCall GetAll3()
+        { return asyncCall("GetAll3"); }
+    QDBusPendingCall GetAll4()
+        { return asyncCall("GetAll4"); }
+    QDBusPendingCall GetAll5()
+        { return asyncCall("GetAll5"); }
+    QDBusPendingCall SetDefaultDataSim(QString aImsi)
+        { return asyncCall("SetDefaultDataSim", aImsi); }
+    QDBusPendingCall SetDefaultVoiceSim(const QString &aImsi)
+        { return asyncCall("SetDefaultVoiceSim", aImsi); }
+    QDBusPendingCall SetEnabledModems(QList<QDBusObjectPath> aModems)
+        { return asyncCall("SetEnabledModems", qVariantFromValue(aModems)); }
+
+Q_SIGNALS: // SIGNALS
+    void DefaultDataModemChanged(QString aPath);
+    void DefaultDataSimChanged(QString aImsi);
+    void DefaultVoiceModemChanged(QString aPath);
+    void DefaultVoiceSimChanged(QString aIimsi);
+    void EnabledModemsChanged(QList<QDBusObjectPath> aModems);
+    void MmsModemChanged(QString aPath);
+    void MmsSimChanged(QString aImsi);
+    void PresentSimsChanged(int aIndex, bool aPresent);
+    void ReadyChanged(bool aReady);
+};
+
+// ==========================================================================
+// QOfonoExtModemManager::Private
+// ==========================================================================
 
 class QOfonoExtModemManager::Private : public QObject
 {
@@ -119,7 +170,7 @@ void QOfonoExtModemManager::Private::onServiceRegistered()
 {
     const bool wasValid = iValid;
     if (!iProxy) {
-        iProxy = new QOfonoExtModemManagerProxy(OFONO_SERVICE, "/", OFONO_BUS, this);
+        iProxy = new QOfonoExtModemManagerProxy(this);
         if (iProxy->isValid()) {
             iValid = false;
             connect(iProxy,

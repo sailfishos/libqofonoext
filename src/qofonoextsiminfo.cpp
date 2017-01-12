@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 Jolla Ltd.
+** Copyright (C) 2016-2017 Jolla Ltd.
 ** Contact: slava.monich@jolla.com
 **
 ** GNU Lesser General Public License Usage
@@ -16,9 +16,43 @@
 #include "qofonoextsiminfo.h"
 #include "qofonoext_p.h"
 
-#include "siminfo_interface.h"
-
 #include <qofonomodem.h>
+
+// ==========================================================================
+// QOfonoExtSimInfoProxy
+//
+// qdbusxml2cpp doesn't really do much, and has a number of limitations,
+// such as the limits on number of arguments for QDBusPendingReply template.
+// It's easier to write these proxies by hand.
+// ==========================================================================
+
+class QOfonoExtSimInfoProxy: public QDBusAbstractInterface
+{
+    Q_OBJECT
+
+public:
+    static const QString INTERFACE;
+    QOfonoExtSimInfoProxy(QString aPath, QObject* aParent) :
+        QDBusAbstractInterface(OFONO_SERVICE, aPath, qPrintable(INTERFACE),
+            OFONO_BUS, aParent) {}
+
+public Q_SLOTS: // METHODS
+    QDBusPendingCall GetInterfaceVersion()
+        { return asyncCall("GetInterfaceVersion"); }
+    QDBusPendingCall GetAll()
+        { return asyncCall("GetAll"); }
+
+Q_SIGNALS: // SIGNALS
+    void CardIdentifierChanged(QString aIccid);
+    void ServiceProviderNameChanged(QString aSpn);
+    void SubscriberIdentityChanged(QString aImsi);
+};
+
+const QString QOfonoExtSimInfoProxy::INTERFACE("org.nemomobile.ofono.SimInfo");
+
+// ==========================================================================
+// QOfonoExtSimInfo::Private
+// ==========================================================================
 
 class QOfonoExtSimInfo::Private : public QObject
 {
@@ -28,7 +62,6 @@ public:
     QOfonoExtSimInfo* iParent;
     QOfonoExtSimInfoProxy* iProxy;
     QSharedPointer<QOfonoModem> iModem;
-    QString iInterfaceName;
     bool iValid;
     QString iModemPath;
     QString iCardIdentifier;
@@ -53,7 +86,6 @@ QOfonoExtSimInfo::Private::Private(QOfonoExtSimInfo* aParent) :
     QObject(aParent),
     iParent(aParent),
     iProxy(NULL),
-    iInterfaceName(QOfonoExtSimInfoProxy::staticInterfaceName()),
     iValid(false)
 {
 }
@@ -86,9 +118,9 @@ void QOfonoExtSimInfo::Private::setModemPath(QString aPath)
 void QOfonoExtSimInfo::Private::checkInterfacePresence()
 {
     if (iModem && iModem->isValid() &&
-        iModem->interfaces().contains(iInterfaceName)) {
+        iModem->interfaces().contains(QOfonoExtSimInfoProxy::INTERFACE)) {
         if (!iProxy) {
-            iProxy = new QOfonoExtSimInfoProxy(OFONO_SERVICE, iModem->objectPath(), OFONO_BUS, this);
+            iProxy = new QOfonoExtSimInfoProxy(iModem->objectPath(), this);
             if (iProxy->isValid()) {
                 connect(new QDBusPendingCallWatcher(iProxy->GetAll(), iProxy),
                     SIGNAL(finished(QDBusPendingCallWatcher*)),
