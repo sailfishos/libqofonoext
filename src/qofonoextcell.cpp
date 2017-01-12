@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 Jolla Ltd.
+** Copyright (C) 2016-2017 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -17,8 +17,6 @@
 #include "qofonoextcellinfo.h"
 #include "qofonoext_p.h"
 
-#include "cell_interface.h"
-
 static const QString kTypeGsm("gsm");
 static const QString kTypeWcdma("wcdma");
 static const QString kTypeLte("lte");
@@ -26,6 +24,39 @@ static const QString kTypeLte("lte");
 #define CELL_PROPERTIES(p) \
     p(mcc) p(mnc) p(signalStrength) p(lac) p(cid) p(bitErrorRate) p(psc) \
     p(ci) p(pci) p(tac) p(rsrp) p(rsrq) p(rssnr) p(cqi) p(timingAdvance)
+
+// ==========================================================================
+// QOfonoExtCellProxy
+//
+// qdbusxml2cpp doesn't really do much, and has a number of limitations,
+// such as the limits on number of arguments for QDBusPendingReply template.
+// It's easier to write these proxies by hand.
+// ==========================================================================
+
+class QOfonoExtCellProxy: public QDBusAbstractInterface
+{
+    Q_OBJECT
+
+public:
+    QOfonoExtCellProxy(QString aPath, QObject* aParent) :
+        QDBusAbstractInterface(OFONO_SERVICE, aPath,
+            "org.nemomobile.ofono.Cell", OFONO_BUS, aParent) {}
+
+public Q_SLOTS: // METHODS
+    QDBusPendingCall GetInterfaceVersion()
+        { return asyncCall("GetInterfaceVersion"); }
+    QDBusPendingCall GetAll()
+        { return asyncCall("GetAll"); }
+
+Q_SIGNALS: // SIGNALS
+    void PropertyChanged(QString aName, QDBusVariant aValue);
+    void RegisteredChanged(bool aRegistered);
+    void Removed();
+};
+
+// ==========================================================================
+// QOfonoExtCell::Private
+// ==========================================================================
 
 class QOfonoExtCell::Private : public QOfonoExtCellProxy
 {
@@ -79,7 +110,7 @@ const QOfonoExtCell::Private::PropertyDesc QOfonoExtCell::Private::Properties[] 
 };
 
 QOfonoExtCell::Private::Private(QString aPath, QOfonoExtCell* aParent) :
-    QOfonoExtCellProxy(OFONO_SERVICE, aPath, OFONO_BUS, aParent),
+    QOfonoExtCellProxy(aPath, aParent),
     iValid(false),
     iFixedPath(false),
     iRegistered(false),
