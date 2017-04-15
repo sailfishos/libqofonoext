@@ -73,6 +73,7 @@ public:
     QString modemPath() const;
     void setModemPath(QString aPath);
     void invalidate();
+    void getAll();
 
 private Q_SLOTS:
     void checkInterfacePresence();
@@ -112,6 +113,7 @@ void QOfonoExtSimInfo::Private::setModemPath(QString aPath)
                 SLOT(checkInterfacePresence()));
             checkInterfacePresence();
         }
+        iParent->modemPathChanged(modemPath());
     }
 }
 
@@ -122,9 +124,6 @@ void QOfonoExtSimInfo::Private::checkInterfacePresence()
         if (!iProxy) {
             iProxy = new QOfonoExtSimInfoProxy(iModem->objectPath(), this);
             if (iProxy->isValid()) {
-                connect(new QDBusPendingCallWatcher(iProxy->GetAll(), iProxy),
-                    SIGNAL(finished(QDBusPendingCallWatcher*)),
-                    SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
                 connect(iProxy,
                     SIGNAL(CardIdentifierChanged(QString)),
                     SLOT(onCardIdentifierChanged(QString)));
@@ -134,6 +133,7 @@ void QOfonoExtSimInfo::Private::checkInterfacePresence()
                 connect(iProxy,
                     SIGNAL(ServiceProviderNameChanged(QString)),
                     SLOT(onServiceProviderNameChanged(QString)));
+                getAll();
             } else {
                 invalidate();
             }
@@ -155,6 +155,13 @@ void QOfonoExtSimInfo::Private::invalidate()
     }
 }
 
+void QOfonoExtSimInfo::Private::getAll()
+{
+    connect(new QDBusPendingCallWatcher(iProxy->GetAll(), iProxy),
+        SIGNAL(finished(QDBusPendingCallWatcher*)),
+        SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
+}
+
 void QOfonoExtSimInfo::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<int,      // InterfaceVersion
@@ -163,7 +170,11 @@ void QOfonoExtSimInfo::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatch
         QString>                // ServiceProviderName
         reply(*aWatcher);
     if (reply.isError()) {
+        // Repeat the call on timeout
         qWarning() << reply.error();
+        if (QOfonoExt::isTimeout(reply.error())) {
+            getAll();
+        }
     } else {
         QString iccid = reply.argumentAt<1>();
         if (iCardIdentifier != iccid) {
