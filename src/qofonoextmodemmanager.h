@@ -31,6 +31,7 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
     Q_PROPERTY(QString defaultVoiceSim READ defaultVoiceSim WRITE setDefaultVoiceSim NOTIFY defaultVoiceSimChanged)
     Q_PROPERTY(QList<bool> presentSims READ presentSims NOTIFY presentSimsChanged)
     Q_PROPERTY(QStringList imeiCodes READ imeiCodes NOTIFY imeiCodesChanged)
+    Q_PROPERTY(QStringList imeisvCodes READ imeisvCodes NOTIFY imeisvCodesChanged)
     Q_PROPERTY(QString mmsSim READ mmsSim NOTIFY mmsSimChanged)
     Q_PROPERTY(QString mmsModem READ mmsModem NOTIFY mmsModemChanged)
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
@@ -52,6 +53,7 @@ public:
     QString defaultVoiceSim() const;
     QList<bool> presentSims() const;
     QStringList imeiCodes() const;
+    QStringList imeisvCodes() const;
     QString mmsSim() const;
     QString mmsModem() const;
     bool ready() const;
@@ -60,6 +62,7 @@ public:
     int errorCount() const;
 
     Q_INVOKABLE QString imeiAt(int aIndex) const;
+    Q_INVOKABLE QString imeisvAt(int aIndex) const;
     Q_INVOKABLE bool simPresentAt(int aIndex) const;
 
     void setEnabledModems(QStringList aModems);
@@ -82,6 +85,7 @@ Q_SIGNALS:
     void presentSimCountChanged(int value);
     void activeSimCountChanged(int value);
     void imeiCodesChanged(QStringList value);
+    void imeisvCodesChanged(QStringList value);
     void mmsSimChanged(QString value);
     void mmsModemChanged(QString value);
     void readyChanged(bool value);

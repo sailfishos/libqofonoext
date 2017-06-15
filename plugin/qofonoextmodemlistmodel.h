@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015-2016 Jolla Ltd.
+** Copyright (C) 2015-2017 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -32,7 +32,8 @@ public:
         DefaultDataRole,
         DefaultVoiceRole,
         SimPresentRole,
-        IMEIRole
+        IMEIRole,
+        IMEISVRole
     };
 
     explicit QOfonoExtModemListModel(QObject* aParent = NULL);
@@ -56,9 +57,12 @@ private Q_SLOTS:
     void onDefaultDataModemChanged(QString aModemPath);
     void onDefaultVoiceModemChanged(QString aModemPath);
     void onPresentSimChanged(int aIndex, bool aPresent);
+    void onImeiCodesChanged(QStringList aList);
+    void onImeisvCodesChanged(QStringList aList);
 
 private:
     void defaultModemChanged(Role aRole, int aPrevRow, int aNewRow);
+    void roleChanged(Role aRole, QStringList aPrevList, QStringList aNewList);
 
 private:
     QSharedPointer<QOfonoExtModemManager> iModemManager;
@@ -66,6 +70,8 @@ private:
     QStringList iEnabledModems;
     QString iDefaultVoiceModem;
     QString iDefaultDataModem;
+    QStringList iImeiList;
+    QStringList iImeisvList;
 };
 
 #endif // QOFONOEXTMODEMLISTMODEL_H

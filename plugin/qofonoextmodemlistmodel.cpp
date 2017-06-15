@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2015-2016 Jolla Ltd.
+** Copyright (C) 2015-2017 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -41,6 +41,12 @@ QOfonoExtModemListModel::QOfonoExtModemListModel(QObject* aParent) :
     connect(iModemManager.data(),
         SIGNAL(presentSimChanged(int,bool)),
         SLOT(onPresentSimChanged(int,bool)));
+    connect(iModemManager.data(),
+        SIGNAL(imeiCodesChanged(QStringList)),
+        SLOT(onImeiCodesChanged(QStringList)));
+    connect(iModemManager.data(),
+        SIGNAL(imeisvCodesChanged(QStringList)),
+        SLOT(onImeisvCodesChanged(QStringList)));
 }
 
 bool QOfonoExtModemListModel::valid() const
@@ -62,6 +68,7 @@ QHash<int,QByteArray> QOfonoExtModemListModel::roleNames() const
     roles[DefaultVoiceRole] = "defaultForVoice";
     roles[SimPresentRole]   = "simPresent";
     roles[IMEIRole]         = "imei";
+    roles[IMEISVRole]       = "imeisv";
     return roles;
 }
 
@@ -81,6 +88,7 @@ QVariant QOfonoExtModemListModel::data(const QModelIndex& aIndex, int aRole) con
         case DefaultVoiceRole: return iAvailableModems.indexOf(iDefaultVoiceModem) == row;
         case SimPresentRole:   return iModemManager->simPresentAt(row);
         case IMEIRole:         return iModemManager->imeiAt(row);
+        case IMEISVRole:       return iModemManager->imeisvAt(row);
         }
     }
     qWarning() << aIndex << aRole;
@@ -179,6 +187,37 @@ void QOfonoExtModemListModel::defaultModemChanged(Role aRole, int aPrevRow, int 
         }
         if (aNewRow >= 0) {
             QModelIndex index(createIndex(aNewRow, 0));
+            Q_EMIT dataChanged(index, index, role);
+        }
+    }
+}
+
+void QOfonoExtModemListModel::onImeiCodesChanged(QStringList aList)
+{
+    QStringList prev = iImeiList;
+    iImeiList = aList;
+    roleChanged(IMEIRole, prev, aList);
+}
+
+void QOfonoExtModemListModel::onImeisvCodesChanged(QStringList aList)
+{
+    QStringList prev = iImeisvList;
+    iImeisvList = aList;
+    roleChanged(IMEISVRole, prev, aList);
+}
+
+void QOfonoExtModemListModel::roleChanged(Role aRole, QStringList aPrevList, QStringList aNewList)
+{
+    // This is slightly paranoid... All these 3 counts should be the same
+    const int n1 = iAvailableModems.count();
+    const int n2 = aPrevList.count();
+    const int n3 = aNewList.count();
+    const int n = qMin(n1, qMin(n2, n3));
+    QVector<int> role;
+    role.append(aRole);
+    for (int i=0; i<n; i++) {
+        if (aPrevList.at(i) != aNewList.at(i)) {
+            QModelIndex index(createIndex(i, 0));
             Q_EMIT dataChanged(index, index, role);
         }
     }

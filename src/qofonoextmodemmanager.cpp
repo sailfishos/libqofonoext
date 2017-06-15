@@ -59,6 +59,8 @@ public Q_SLOTS: // METHODS
         { return asyncCall("GetAll5"); }
     QDBusPendingCall GetAll6()
         { return asyncCall("GetAll6"); }
+    QDBusPendingCall GetAll7()
+        { return asyncCall("GetAll7"); }
     QDBusPendingCall SetDefaultDataSim(QString aImsi)
         { return asyncCall("SetDefaultDataSim", aImsi); }
     QDBusPendingCall SetDefaultVoiceSim(const QString &aImsi)
@@ -127,6 +129,7 @@ public:
     QString iDefaultDataSim;
     QList<bool> iPresentSims;
     QStringList iIMEIs;
+    QStringList iIMEISVs;
     QString iMmsSim;
     QString iMmsModem;
     int iPresentSimCount;
@@ -285,7 +288,8 @@ void QOfonoExtModemManager::Private::getAll()
         (iInterfaceVersion == 3) ? QDBusPendingCall(iProxy->GetAll3()) :
         (iInterfaceVersion == 4) ? QDBusPendingCall(iProxy->GetAll4()) :
         (iInterfaceVersion == 5) ? QDBusPendingCall(iProxy->GetAll5()) :
-        QDBusPendingCall(iProxy->GetAll6()), iProxy);
+        (iInterfaceVersion == 6) ? QDBusPendingCall(iProxy->GetAll6()) :
+        QDBusPendingCall(iProxy->GetAll7()), iProxy);
     connect(iInitCall, SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
 }
@@ -407,6 +411,15 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
             if (iErrorCount != errorCount) {
                 iErrorCount = errorCount;
                 Q_EMIT iParent->errorCountChanged(errorCount);
+            }
+        }
+
+        if (version >= 7) {
+            // 13: imeisv
+            list = reply.argumentAt(13).toStringList();
+            if (iIMEISVs != list) {
+                iIMEISVs = list;
+                Q_EMIT iParent->imeisvCodesChanged(iIMEISVs);
             }
         }
 
@@ -666,6 +679,11 @@ QList<bool> QOfonoExtModemManager::presentSims() const
 QStringList QOfonoExtModemManager::imeiCodes() const
 {
     return iPrivate->iIMEIs;
+}
+
+QStringList QOfonoExtModemManager::imeisvCodes() const
+{
+    return iPrivate->iIMEISVs;
 }
 
 QString QOfonoExtModemManager::mmsSim() const
