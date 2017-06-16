@@ -1,7 +1,7 @@
 Name:       libqofonoext
 
 Summary:    A library of Qt bindings for ofono extensions
-Version:    1.0.17
+Version:    1.0.18
 Release:    1
 Group:      System/Libraries
 License:    LGPLv2.1
