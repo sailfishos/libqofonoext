@@ -143,6 +143,7 @@ public:
 
     static QStringList toStringList(QList<QDBusObjectPath> aList);
     static QList<QDBusObjectPath> toPathList(QStringList aList);
+    QStringList dummyStringList();
 
     void getAll();
     void getInterfaceVersion();
@@ -375,10 +376,13 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         if (version >= 3) {
             // 8: imei
             list = reply.argumentAt(8).toStringList();
-            if (iIMEIs != list) {
-                iIMEIs = list;
-                Q_EMIT iParent->imeiCodesChanged(iIMEIs);
-            }
+        } else {
+            list = dummyStringList();
+        }
+
+        if (iIMEIs != list) {
+            iIMEIs = list;
+            Q_EMIT iParent->imeiCodesChanged(iIMEIs);
         }
 
         if (version >= 4) {
@@ -417,10 +421,13 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         if (version >= 7) {
             // 13: imeisv
             list = reply.argumentAt(13).toStringList();
-            if (iIMEISVs != list) {
-                iIMEISVs = list;
-                Q_EMIT iParent->imeisvCodesChanged(iIMEISVs);
-            }
+        } else {
+            list = dummyStringList();
+        }
+
+        if (iIMEISVs != list) {
+            iIMEISVs = list;
+            Q_EMIT iParent->imeisvCodesChanged(iIMEISVs);
         }
 
         if (!iValid) {
@@ -429,6 +436,16 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
         }
     }
     aWatcher->deleteLater();
+}
+
+QStringList QOfonoExtModemManager::Private::dummyStringList()
+{
+    QStringList list;
+    const int n = iAvailableModems.count();
+    for (int i=0; i<n; i++) {
+        list.append(QString());
+    }
+    return list;
 }
 
 void QOfonoExtModemManager::Private::presentSimsChanged(QList<bool> aOldList)
