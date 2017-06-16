@@ -742,6 +742,15 @@ QString QOfonoExtModemManager::imeiAt(int aIndex) const
     }
 }
 
+QString QOfonoExtModemManager::imeisvAt(int aIndex) const
+{
+    if (aIndex >= 0 && aIndex < iPrivate->iIMEISVs.count()) {
+        return iPrivate->iIMEISVs.at(aIndex);
+    } else {
+        return QString();
+    }
+}
+
 bool QOfonoExtModemManager::simPresentAt(int aIndex) const
 {
     if (aIndex >= 0 && aIndex < iPrivate->iPresentSims.count()) {
