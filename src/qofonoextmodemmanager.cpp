@@ -61,6 +61,8 @@ public Q_SLOTS: // METHODS
         { return asyncCall("GetAll6"); }
     QDBusPendingCall GetAll7()
         { return asyncCall("GetAll7"); }
+    QDBusPendingCall GetAll8()
+        { return asyncCall("GetAll8"); }
     QDBusPendingCall SetDefaultDataSim(QString aImsi)
         { return asyncCall("SetDefaultDataSim", aImsi); }
     QDBusPendingCall SetDefaultVoiceSim(const QString &aImsi)
@@ -290,7 +292,8 @@ void QOfonoExtModemManager::Private::getAll()
         (iInterfaceVersion == 4) ? QDBusPendingCall(iProxy->GetAll4()) :
         (iInterfaceVersion == 5) ? QDBusPendingCall(iProxy->GetAll5()) :
         (iInterfaceVersion == 6) ? QDBusPendingCall(iProxy->GetAll6()) :
-        QDBusPendingCall(iProxy->GetAll7()), iProxy);
+        (iInterfaceVersion == 7) ? QDBusPendingCall(iProxy->GetAll7()) :
+        QDBusPendingCall(iProxy->GetAll8()), iProxy);
     connect(iInitCall, SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
 }
@@ -400,10 +403,10 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
             updateReady(true);
         }
 
+        int errorCount = 0;
         if (version >= 6) {
             // 12: modemErrors
             ModemErrors me = qdbus_cast<ModemErrors>(reply.argumentAt(12));
-            int errorCount = 0;
             const int n = me.count();
             for (int i=0; i<n; i++) {
                 const ErrorList& errors = me.at(i);
@@ -412,10 +415,6 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
                     errorCount += errors.at(j).iCount;
                 }
             }
-            if (iErrorCount != errorCount) {
-                iErrorCount = errorCount;
-                Q_EMIT iParent->errorCountChanged(errorCount);
-            }
         }
 
         if (version >= 7) {
@@ -423,6 +422,20 @@ void QOfonoExtModemManager::Private::onGetAllFinished(QDBusPendingCallWatcher* a
             list = reply.argumentAt(13).toStringList();
         } else {
             list = dummyStringList();
+        }
+
+        if (version >= 8) {
+            // 14: errors
+            ErrorList errors = qdbus_cast<ErrorList>(reply.argumentAt(14));
+            const int k = errors.count();
+            for (int i=0; i<k; i++) {
+                errorCount += errors.at(i).iCount;
+            }
+        }
+
+        if (iErrorCount != errorCount) {
+            iErrorCount = errorCount;
+            Q_EMIT iParent->errorCountChanged(errorCount);
         }
 
         if (iIMEISVs != list) {
