@@ -22,8 +22,9 @@ static const QString kTypeWcdma("wcdma");
 static const QString kTypeLte("lte");
 
 #define CELL_PROPERTIES(p) \
-    p(mcc) p(mnc) p(signalStrength) p(lac) p(cid) p(bitErrorRate) p(psc) \
-    p(ci) p(pci) p(tac) p(rsrp) p(rsrq) p(rssnr) p(cqi) p(timingAdvance)
+    p(mcc) p(mnc) p(signalStrength) p(lac) p(cid) p(arfcn) p(bsic) \
+    p(bitErrorRate) p(psc) p(uarfcn) p(ci) p(pci) p(tac) p(earfcn) p(rsrp) \
+    p(rsrq) p(rssnr) p(cqi) p(timingAdvance)
 
 // ==========================================================================
 // QOfonoExtCellProxy
@@ -120,7 +121,7 @@ QOfonoExtCell::Private::Private(QString aPath, QOfonoExtCell* aParent) :
 {
     // Extract modem path from the cell path, e.g. "/ril_0/cell_0" => "/ril_0"
     iCellInfo = QOfonoExtCellInfo::instance(aPath.left(aPath.lastIndexOf('/')));
-    memset(iProperties, -1, sizeof(iProperties));
+    for (int i = 0; i < PropertyCount; i++) iProperties[i] = InvalidValue;
     connect(this, SIGNAL(Removed()),
         aParent, SIGNAL(removed()));
     connect(this,
@@ -158,7 +159,7 @@ QOfonoExtCell::Private::Property QOfonoExtCell::Private::propertyFromString(QStr
 
 int QOfonoExtCell::Private::value(Private* aThis, QOfonoExtCell::Private::Property aProperty)
 {
-    return aThis ? aThis->iProperties[aProperty] : -1;
+    return aThis ? aThis->iProperties[aProperty] : InvalidValue;
 }
 
 void QOfonoExtCell::Private::onCellsChanged()
@@ -205,6 +206,7 @@ void QOfonoExtCell::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatcher)
             getAll();
         }
     } else {
+        int i;
         const bool wasRegistered = iRegistered;
         const Type prevType = iType;
         iType = typeFromString(reply.argumentAt<1>());
@@ -213,10 +215,10 @@ void QOfonoExtCell::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatcher)
         // Unpack properties (they are all integers)
         int prevProps[PropertyCount];
         memcpy(prevProps, iProperties, sizeof(iProperties));
-        memset(iProperties, -1, sizeof(iProperties));
+        for (i = 0; i < PropertyCount; i++) iProperties[i] = InvalidValue;
         QVariantMap variants = reply.argumentAt<3>();
         QStringList keys = variants.keys();
-        for (int i=0; i<keys.count(); i++) {
+        for (i=0; i<keys.count(); i++) {
             QString key = keys.at(i);
             QVariant value = variants.value(key);
             bool ok = false;
