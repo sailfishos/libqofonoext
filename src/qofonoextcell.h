@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 Jolla Ltd.
+** Copyright (C) 2016-2017 Jolla Ltd.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -30,24 +30,34 @@ class QOFONOEXT_EXPORT QOfonoExtCell : public QObject
     Q_PROPERTY(int signalStrength READ signalStrength NOTIFY signalStrengthChanged)
     Q_PROPERTY(int lac READ lac NOTIFY lacChanged)
     Q_PROPERTY(int cid READ cid NOTIFY cidChanged)
+    Q_PROPERTY(int arfcn READ arfcn NOTIFY arfcnChanged)
+    Q_PROPERTY(int bsic READ bsic NOTIFY bsicChanged)
     Q_PROPERTY(int bitErrorRate READ bitErrorRate NOTIFY bitErrorRateChanged)
     Q_PROPERTY(int psc READ psc NOTIFY pscChanged)
+    Q_PROPERTY(int uarfcn READ uarfcn NOTIFY uarfcnChanged)
     Q_PROPERTY(int ci READ ci NOTIFY ciChanged)
     Q_PROPERTY(int pci READ pci NOTIFY pciChanged)
     Q_PROPERTY(int tac READ tac NOTIFY tacChanged)
+    Q_PROPERTY(int earfcn READ earfcn NOTIFY earfcnChanged)
     Q_PROPERTY(int rsrp READ rsrp NOTIFY rsrpChanged)
     Q_PROPERTY(int rsrq READ rsrq NOTIFY rsrqChanged)
     Q_PROPERTY(int rssnr READ rssnr NOTIFY rssnrChanged)
     Q_PROPERTY(int cqi READ cqi NOTIFY cqiChanged)
     Q_PROPERTY(int timingAdvance READ timingAdvance NOTIFY timingAdvanceChanged)
     Q_ENUMS(Type)
+    Q_ENUMS(Constants)
 
 public:
     enum Type {
-        UNKNOWN,
+        Unknown,
         GSM,
         WCDMA,
-        LTE
+        LTE,
+        UNKNOWN = Unknown // For backward compatibility
+    };
+
+    enum Constants {
+        InvalidValue = INT_MAX
     };
 
     explicit QOfonoExtCell(QObject* aParent = NULL);
@@ -66,6 +76,10 @@ public:
     int mnc() const;
     int signalStrength() const;
 
+    // GSM:
+    int arfcn() const;
+    int bsic() const;
+
     // GSM and WCDMA:
     int lac() const;
     int cid() const;
@@ -73,11 +87,13 @@ public:
 
     // WCDMA:
     int psc() const;
+    int uarfcn() const;
 
     // LTE:
     int ci() const;
     int pci() const;
     int tac() const;
+    int earfcn() const;
     int rsrp() const;
     int rsrq() const;
     int rssnr() const;
@@ -94,11 +110,15 @@ Q_SIGNALS:
     void signalStrengthChanged();
     void lacChanged();
     void cidChanged();
+    void arfcnChanged();
+    void bsicChanged();
     void bitErrorRateChanged();
     void pscChanged();
+    void uarfcnChanged();
     void ciChanged();
     void pciChanged();
     void tacChanged();
+    void earfcnChanged();
     void rsrpChanged();
     void rsrqChanged();
     void rssnrChanged();
