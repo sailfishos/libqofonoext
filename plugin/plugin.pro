@@ -22,10 +22,13 @@ HEADERS = \
     qofonoextmodemlistmodel.h \
     qofonoextsimlistmodel.h
 
-OTHER_FILES += qmldir
+OTHER_FILES += qmldir plugins.qmltypes
 
 target.path = $$[QT_INSTALL_QML]/org/nemomobile/ofono
 qmldir.path = $$[QT_INSTALL_QML]/org/nemomobile/ofono
-qmldir.files += qmldir
+qmldir.files += qmldir plugins.qmltypes
 
 INSTALLS += target qmldir
+
+qmltypes.commands = qmlplugindump -nonrelocatable org.nemomobile.ofono 1.0 > $$PWD/plugins.qmltypes
+QMAKE_EXTRA_TARGETS += qmltypes
