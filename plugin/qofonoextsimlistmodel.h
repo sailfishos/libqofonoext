@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 Jolla Ltd.
+** Copyright (C) 2016-2018 Jolla Ltd.
 ** Contact: slava.monich@jolla.com
 **
 ** GNU Lesser General Public License Usage
@@ -18,6 +18,7 @@
 
 #include "qofonosimwatcher.h"
 #include "qofonoextsiminfo.h"
+#include "qofonoextmodemmanager.h"
 
 class QOfonoExtSimListModel : public QAbstractListModel {
     Q_OBJECT
@@ -27,6 +28,7 @@ class QOfonoExtSimListModel : public QAbstractListModel {
 public:
     enum Role {
         PathRole = Qt::UserRole + 1,
+        SlotRole,
         ValidRole,
         SubscriberIdentityRole,
         MobileCountryCodeRole,
@@ -61,13 +63,15 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void onPresentSimListChanged();
-    void onValidChanged();
 
 private:
+    void checkValid();
     bool isValid() const;
 
 private:
     class SimData;
+    friend class SimData;
+    QSharedPointer<QOfonoExtModemManager> iModemManager;
     QOfonoSimWatcher* iSimWatcher;
     QList<SimData*> iSimList;
     bool iValid;

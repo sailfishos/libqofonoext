@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 Jolla Ltd.
+** Copyright (C) 2016-2018 Jolla Ltd.
 ** Contact: slava.monich@jolla.com
 **
 ** GNU Lesser General Public License Usage
@@ -22,6 +22,7 @@ public:
     Q_OBJECT
 
     SimData(QOfonoExtSimListModel* aParent,
+            QSharedPointer<QOfonoExtModemManager> aModemManager,
             QOfonoSimManager::SharedPointer aSimManager,
             int aIndex = -1);
 
@@ -44,25 +45,36 @@ private Q_SLOTS:
 
 private:
     void propertyChanged(Role role);
+    bool isValid() const;
+    int slotNumber() const;
 
 public:
     QOfonoExtSimListModel* iParent;
+    QSharedPointer<QOfonoExtModemManager> iModemManager;
     QOfonoSimManager::SharedPointer iSim;
     QOfonoExtSimInfo* iCache;
     int iIndex;
+    int iSlot;
+    bool iValid;
 };
 
 QOfonoExtSimListModel::SimData::SimData(QOfonoExtSimListModel* aParent,
+    QSharedPointer<QOfonoExtModemManager> aModemManager,
     QOfonoSimManager::SharedPointer aSimManager, int aIndex) :
     QObject(aParent),
     iParent(aParent),
+    iModemManager(aModemManager),
     iSim(aSimManager),
     iCache(new QOfonoExtSimInfo(this)),
     iIndex(aIndex)
 {
+    iSlot = slotNumber();
+    iValid = isValid();
+
     QOfonoSimManager* sim = iSim.data();
     QQmlEngine::setObjectOwnership(iCache, QQmlEngine::CppOwnership);
     iCache->setModemPath(sim->modemPath());
+
     connect(iCache,
         SIGNAL(validChanged(bool)),
         SLOT(onValidChanged()));
@@ -72,7 +84,8 @@ QOfonoExtSimListModel::SimData::SimData(QOfonoExtSimListModel* aParent,
     connect(iCache,
         SIGNAL(serviceProviderNameChanged(QString)),
         SLOT(onServiceProviderNameChanged()));
-    iParent->connect(iCache,
+
+    connect(iModemManager.data(),
         SIGNAL(validChanged(bool)),
         SLOT(onValidChanged()));
 
@@ -121,9 +134,34 @@ void QOfonoExtSimListModel::SimData::propertyChanged(Role role)
     }
 }
 
+bool QOfonoExtSimListModel::SimData::isValid() const
+{
+    // QOfonoSimWatcher guarantees that QOfonoSimManager is valid
+    return iModemManager->valid() && iCache->valid();
+}
+
+int QOfonoExtSimListModel::SimData::slotNumber() const
+{
+    // The first slot is 1, second slot 2 and so on
+    return iModemManager->availableModems().indexOf(iSim->modemPath()) + 1;
+}
+
 void QOfonoExtSimListModel::SimData::onValidChanged()
 {
-    propertyChanged(ValidRole);
+    const bool valid = isValid();
+    if (valid) {
+        // Once set, slot number doesn't change
+        const int slot = slotNumber();
+        if (slot && iSlot != slot) {
+            iSlot = slot;
+            propertyChanged(SlotRole);
+        }
+    }
+    if (iValid != valid) {
+        iValid = valid;
+        propertyChanged(ValidRole);
+        iParent->checkValid();
+    }
 }
 
 void QOfonoExtSimListModel::SimData::onSubscriberIdentityChanged()
@@ -197,13 +235,14 @@ void QOfonoExtSimListModel::SimData::onBarredDialingChanged()
 
 QOfonoExtSimListModel::QOfonoExtSimListModel(QObject *aParent) :
     QAbstractListModel(aParent),
+    iModemManager(QOfonoExtModemManager::instance()),
     iSimWatcher(new QOfonoSimWatcher(this)),
     iValid(false)
 {
     iSimWatcher->setRequireSubscriberIdentity(false);
     QList<QOfonoSimManager::SharedPointer> sims(iSimWatcher->presentSimList());
     for (int i=0; i<sims.count(); i++) {
-        iSimList.append(new SimData(this, sims.at(i), i));
+        iSimList.append(new SimData(this, iModemManager, sims.at(i), i));
     }
     iValid = isValid();
     connect(iSimWatcher,
@@ -227,6 +266,7 @@ int QOfonoExtSimListModel::count() const
 QHash<int,QByteArray> QOfonoExtSimListModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
+    roles[SlotRole]                = "slot";
     roles[PathRole]                = "path";
     roles[ValidRole]               = "valid";
     roles[SubscriberIdentityRole]  = "subscriberIdentity";
@@ -256,6 +296,8 @@ QVariant QOfonoExtSimListModel::data(const QModelIndex& aIndex, int aRole) const
     if (row >= 0 && row < iSimList.count()) {
         const SimData* d = iSimList.at(row);
         switch (aRole) {
+        case SlotRole:                return d->iSlot;
+        case ValidRole:               return d->iValid;
         case PathRole:                return d->iSim->modemPath();
         case MobileCountryCodeRole:   return d->iSim->mobileCountryCode();
         case MobileNetworkCodeRole:   return d->iSim->mobileNetworkCode();
@@ -268,7 +310,6 @@ QVariant QOfonoExtSimListModel::data(const QModelIndex& aIndex, int aRole) const
         case PinRetriesRole:          return d->iSim->pinRetries();
         case FixedDialingRole:        return d->iSim->fixedDialing();
         case BarredDialingRole:       return d->iSim->barredDialing();
-        case ValidRole:               return d->iCache->valid();
         case SubscriberIdentityRole:  return d->iCache->subscriberIdentity();
         case ServiceProviderNameRole: return d->iCache->serviceProviderName();
         }
@@ -302,7 +343,7 @@ void QOfonoExtSimListModel::onPresentSimListChanged()
     for (i=0; i<sims.count(); i++) {
         if (iSimList.count() <= i ||
             iSimList.at(i)->iSim->modemPath() != paths.at(i)) {
-            SimData* data = new SimData(this, sims.at(i), i);
+            SimData* data = new SimData(this, iModemManager, sims.at(i), i);
             beginInsertRows(QModelIndex(), i, i);
             iSimList.insert(i, data);
             endInsertRows();
@@ -324,14 +365,14 @@ bool QOfonoExtSimListModel::isValid() const
 {
     bool valid = iSimWatcher->isValid();
     for (int i=0; valid && i<iSimList.count(); i++) {
-        if (!iSimList.at(i)->iCache->valid()) {
+        if (!iSimList.at(i)->iValid) {
             valid = false;
         }
     }
     return valid;
 }
 
-void QOfonoExtSimListModel::onValidChanged()
+void QOfonoExtSimListModel::checkValid()
 {
     const bool wasValid = iValid;
     iValid = isValid();
