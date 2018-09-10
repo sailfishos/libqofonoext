@@ -1,12 +1,12 @@
 Name:       libqofonoext
 
 Summary:    A library of Qt bindings for ofono extensions
-Version:    1.0.22
+Version:    1.0.23
 Release:    1
 Group:      System/Libraries
 License:    LGPLv2.1
 URL:        https://git.merproject.org/mer-core/libqofonoext
-Source0:    libqofonoext-%{version}.tar.bz2
+Source0:    %{name}-%{version}.tar.bz2
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 Requires:       libqofono-qt5 >= 0.87
@@ -22,22 +22,22 @@ BuildRequires:  pkgconfig(qofono-qt5) >= 0.87
 This package contains Qt bindings for ofono extensions
 
 %package declarative
-Summary:    Declarative plugin for libqofonoext
+Summary:    Declarative plugin for %{name}
 Group:      Development/Tools
 Requires:   %{name} = %{version}-%{release}
 Requires:   %{name} = %{version}
 
 %description declarative
-This package contains declarative plugin for libqofonoext
+This package contains declarative plugin for %{name}
 
 %package devel
-Summary:    Development files for libqofonoext
+Summary:    Development files for %{name}
 Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   %{name} = %{version}
 
 %description devel
-This package contains the development header files for libqofonoext
+This package contains the development header files for %{name}
 
 %prep
 %setup -q -n %{name}-%{version}
