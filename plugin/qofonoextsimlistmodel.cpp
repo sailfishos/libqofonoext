@@ -28,7 +28,6 @@ public:
 
 private Q_SLOTS:
     void onValidChanged();
-    void onPresentSimListChanged();
     void onSubscriberIdentityChanged();
     void onMobileCountryCodeChanged();
     void onMobileNetworkCodeChanged();
@@ -247,7 +246,7 @@ QOfonoExtSimListModel::QOfonoExtSimListModel(QObject *aParent) :
     iValid = isValid();
     connect(iSimWatcher,
         SIGNAL(validChanged()),
-        SLOT(onValidChanged()));
+        SLOT(onPresentSimListChanged()));
     connect(iSimWatcher,
         SIGNAL(presentSimListChanged()),
         SLOT(onPresentSimListChanged()));
@@ -321,7 +320,10 @@ QVariant QOfonoExtSimListModel::data(const QModelIndex& aIndex, int aRole) const
 
 void QOfonoExtSimListModel::onPresentSimListChanged()
 {
-    QList<QOfonoSimManager::SharedPointer> sims(iSimWatcher->presentSimList());
+    QList<QOfonoSimManager::SharedPointer> sims;
+    if (iSimWatcher->isValid()) {
+        sims = iSimWatcher->presentSimList();
+    }
     const bool countHasChanged(iSimList.count() != sims.count());
     const bool wasValid = iValid;
     QStringList paths;
