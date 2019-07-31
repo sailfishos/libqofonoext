@@ -4,8 +4,8 @@ Summary:    A library of Qt bindings for ofono extensions
 Version:    1.0.23
 Release:    1
 Group:      System/Libraries
-License:    LGPLv2.1
-URL:        https://git.merproject.org/mer-core/libqofonoext
+License:    LGPLv2
+URL:        https://git.sailfishos.org/mer-core/libqofonoext
 Source0:    %{name}-%{version}.tar.bz2
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
