@@ -1,6 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2016-2017 Jolla Ltd.
+** Copyright (C) 2020 Open Mobile Platform LLC.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -44,6 +45,7 @@ class QOFONOEXT_EXPORT QOfonoExtCell : public QObject
     Q_PROPERTY(int rssnr READ rssnr NOTIFY rssnrChanged)
     Q_PROPERTY(int cqi READ cqi NOTIFY cqiChanged)
     Q_PROPERTY(int timingAdvance READ timingAdvance NOTIFY timingAdvanceChanged)
+    Q_PROPERTY(int signalLevelDbm READ signalLevelDbm NOTIFY signalLevelDbmChanged)
     Q_ENUMS(Type)
     Q_ENUMS(Constants)
 
@@ -75,6 +77,7 @@ public:
     int mcc() const;
     int mnc() const;
     int signalStrength() const;
+    int signalLevelDbm() const;
 
     // GSM:
     int arfcn() const;
@@ -124,6 +127,7 @@ Q_SIGNALS:
     void rssnrChanged();
     void cqiChanged();
     void timingAdvanceChanged();
+    void signalLevelDbmChanged();
     void propertyChanged(QString name, int value);
     void removed();
 
