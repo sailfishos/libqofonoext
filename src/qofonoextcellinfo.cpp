@@ -1,6 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2016-2020 Jolla Ltd.
+** Copyright (C) 2021 Open Mobile Platform LLC.
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -44,10 +45,13 @@ public Q_SLOTS: // METHODS
         { return asyncCall(kMethodGetCells); }
     QDBusMessage GetCellsSync()
         { return call(kMethodGetCells); }
+    QDBusPendingCall Unsubscribe()
+        { return asyncCall("Unsubscribe"); }
 
 Q_SIGNALS: // SIGNALS
     void CellsAdded(QList<QDBusObjectPath> aPaths);
     void CellsRemoved(QList<QDBusObjectPath> aPaths);
+    void Unsubscribed();
 };
 
 const QString QOfonoExtCellInfoProxy::INTERFACE("org.nemomobile.ofono.CellInfo");
@@ -65,6 +69,7 @@ public:
     QString modemPath() const;
     void setModemPath(QString aPath);
     void setModemPathSyncInit(QString aPath);
+    void setActive(bool val);
 
 private:
     void getCellsSyncInit();
@@ -73,17 +78,21 @@ private:
     void setModemPath(QString aPath, QSharedPointer<QOfonoModem> aModem, void (Private::*aGetCells)());
     void checkInterfacePresence(void (Private::*getCellsFn)());
     static QStringList getPaths(const QList<QDBusObjectPath> aPaths);
+    void unsubscribe();
 
 private Q_SLOTS:
     void onModemChanged();
     void onGetCellsFinished(QDBusPendingCallWatcher* aWatcher);
+    void onUnsubscribeFinished(QDBusPendingCallWatcher* aWatcher);
     void onCellsAdded(QList<QDBusObjectPath> aCells);
     void onCellsRemoved(QList<QDBusObjectPath> aCells);
+    void onUnsubscribed();
 
 public:
     bool iValid;
     bool iFixedPath;
     QStringList iCells;
+    bool iActive;
 
 private:
     QOfonoExtCellInfo* iParent;
@@ -95,6 +104,7 @@ QOfonoExtCellInfo::Private::Private(QOfonoExtCellInfo* aParent) :
     QObject(aParent),
     iValid(false),
     iFixedPath(false),
+    iActive(false),
     iParent(aParent),
     iProxy(NULL)
 {
@@ -143,6 +153,10 @@ void QOfonoExtCellInfo::Private::getCellsAsync()
     connect(new QDBusPendingCallWatcher(iProxy->GetCellsAsync(), iProxy),
         SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onGetCellsFinished(QDBusPendingCallWatcher*)));
+    if (!iActive) {
+        iActive = true;
+        Q_EMIT iParent->activeChanged();
+    }
 }
 
 void QOfonoExtCellInfo::Private::getCellsSyncInit()
@@ -159,6 +173,19 @@ void QOfonoExtCellInfo::Private::getCellsSyncInit()
             getCellsAsync();
         }
     }
+    if (!iActive) {
+        iActive = true;
+        Q_EMIT iParent->activeChanged();
+    }
+}
+
+void QOfonoExtCellInfo::Private::unsubscribe()
+{
+    if (iProxy) {
+        connect(new QDBusPendingCallWatcher(iProxy->Unsubscribe(), iProxy),
+            SIGNAL(finished(QDBusPendingCallWatcher*)),
+            SLOT(onUnsubscribeFinished(QDBusPendingCallWatcher*)));
+    }
 }
 
 void QOfonoExtCellInfo::Private::checkInterfacePresence(void (Private::*aGetCells)())
@@ -174,6 +201,8 @@ void QOfonoExtCellInfo::Private::checkInterfacePresence(void (Private::*aGetCell
                 connect(iProxy,
                     SIGNAL(CellsRemoved(QList<QDBusObjectPath>)),
                     SLOT(onCellsRemoved(QList<QDBusObjectPath>)));
+                connect(iProxy, SIGNAL(Unsubscribed()),
+                        SLOT(onUnsubscribed()));
                 (this->*aGetCells)();
             } else {
                 invalidate();
@@ -236,6 +265,12 @@ void QOfonoExtCellInfo::Private::onModemChanged()
     checkInterfacePresence(&Private::getCellsAsync);
 }
 
+void QOfonoExtCellInfo::Private::onUnsubscribeFinished(
+                                        QDBusPendingCallWatcher* aWatcher)
+{
+    aWatcher->deleteLater();
+}
+
 void QOfonoExtCellInfo::Private::onCellsAdded(QList<QDBusObjectPath> aCells)
 {
     QStringList cells;
@@ -268,6 +303,24 @@ void QOfonoExtCellInfo::Private::onCellsRemoved(QList<QDBusObjectPath> aCells)
     }
 }
 
+void QOfonoExtCellInfo::Private::onUnsubscribed()
+{
+    if (iActive) {
+        iActive = false;
+        Q_EMIT iParent->activeChanged();
+    }
+}
+
+void QOfonoExtCellInfo::Private::setActive(bool val)
+{
+    if (val != iActive) {
+        if (val)
+            getCellsAsync();
+        else
+            unsubscribe();
+    }
+}
+
 // ==========================================================================
 // QOfonoExtCellInfo
 // ==========================================================================
@@ -287,6 +340,7 @@ QOfonoExtCellInfo::QOfonoExtCellInfo(QString aModemPath, QObject* aParent) : // 
 
 QOfonoExtCellInfo::~QOfonoExtCellInfo()
 {
+    iPrivate->setActive(false);
 }
 
 QSharedPointer<QOfonoExtCellInfo> QOfonoExtCellInfo::instance(QString aPath)
@@ -336,6 +390,16 @@ void QOfonoExtCellInfo::setModemPath(QString aModemPath)
             iPrivate->setModemPath(aModemPath);
         }
     }
+}
+
+bool QOfonoExtCellInfo::active() const
+{
+    return iPrivate->iActive;
+}
+
+void QOfonoExtCellInfo::setActive(bool val)
+{
+    iPrivate->setActive(val);
 }
 
 #include "qofonoextcellinfo.moc"

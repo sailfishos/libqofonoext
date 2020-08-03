@@ -23,6 +23,7 @@ class QOFONOEXT_EXPORT QOfonoExtCellInfo : public QObject
     Q_PROPERTY(QString modemPath READ modemPath WRITE setModemPath NOTIFY modemPathChanged)
     Q_PROPERTY(bool valid READ valid NOTIFY validChanged)
     Q_PROPERTY(QStringList cells READ cells NOTIFY cellsChanged)
+    Q_PROPERTY(bool active READ active WRITE setActive NOTIFY activeChanged)
 
 public:
     explicit QOfonoExtCellInfo(QObject* aParent = Q_NULLPTR);
@@ -35,9 +36,11 @@ public:
 
     QString modemPath() const;
     void setModemPath(QString aModemPath);
+    void setActive(bool val);
 
     bool valid() const;
     QStringList cells() const;
+    bool active() const;
 
 Q_SIGNALS:
     void validChanged();
@@ -45,6 +48,7 @@ Q_SIGNALS:
     void cellsChanged();
     void cellsAdded(QStringList cells);
     void cellsRemoved(QStringList cells);
+    void activeChanged();
 
 private:
     class Private;
