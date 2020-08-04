@@ -1,6 +1,7 @@
 /****************************************************************************
 **
 ** Copyright (C) 2016-2017 Jolla Ltd.
+** Copyright (C) 2020 Open Mobile Platform LLC.
 ** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
@@ -84,6 +85,8 @@ public:
     static Property propertyFromString(QString aProperty);
 
 private:
+    static int getRssiDbmFromAsu(int asu);
+    static int inRangeOrUnavailable(int value, int rangeMin, int rangeMax);
     void getAll();
 
 private Q_SLOTS:
@@ -91,12 +94,14 @@ private Q_SLOTS:
     void onGetAllFinished(QDBusPendingCallWatcher* aWatcher);
     void onPropertyChanged(QString aName, QDBusVariant aValue);
     void onRegisteredChanged(bool aRegistered);
+    void updateSignalLevelDbm();
 
 public:
     bool iValid;
     bool iFixedPath;
     bool iRegistered;
     int iProperties[PropertyCount];
+    int iSignalLevelDbm;
     QOfonoExtCell::Type iType;
 
 private:
@@ -115,6 +120,7 @@ QOfonoExtCell::Private::Private(QString aPath, QOfonoExtCell* aParent) :
     iValid(false),
     iFixedPath(false),
     iRegistered(false),
+    iSignalLevelDbm(InvalidValue),
     iType(UNKNOWN),
     iParent(aParent),
     iPendingGetAll(NULL)
@@ -136,6 +142,12 @@ QOfonoExtCell::Private::Private(QString aPath, QOfonoExtCell* aParent) :
     connect(iCellInfo.data(),
         SIGNAL(validChanged()),
         SLOT(onCellsChanged()));
+    connect(aParent, SIGNAL(typeChanged()),
+        this, SLOT(updateSignalLevelDbm()));
+    connect(aParent, SIGNAL(signalStrengthChanged()),
+        this, SLOT(updateSignalLevelDbm()));
+    connect(aParent, SIGNAL(rsrpChanged()),
+        this, SLOT(updateSignalLevelDbm()));
     onCellsChanged();
 }
 
@@ -179,6 +191,17 @@ void QOfonoExtCell::Private::onCellsChanged()
             Q_EMIT iParent->validChanged();
         }
     }
+}
+
+/* Range for RSSI in ASU (0-31, 99) as defined in TS 27.007 8.69 */
+int QOfonoExtCell::Private::getRssiDbmFromAsu(int asu)
+{
+    return (asu > 31 || asu < 0) ? InvalidValue : (-113 + (2 * asu));
+}
+
+int QOfonoExtCell::Private::inRangeOrUnavailable(int value, int rangeMin, int rangeMax)
+{
+    return (value < rangeMin || value > rangeMax) ? InvalidValue : value;
 }
 
 void QOfonoExtCell::Private::getAll()
@@ -271,6 +294,33 @@ void QOfonoExtCell::Private::onRegisteredChanged(bool aRegistered)
     Q_EMIT iParent->registeredChanged();
 }
 
+void QOfonoExtCell::Private::updateSignalLevelDbm()
+{
+    int signalLevelDbm = InvalidValue;
+
+    switch (iType) {
+    case LTE:
+        /* Return RSRP value. Reference: 3GPP TS 36.133, sub-clause 9.1.4 */
+        signalLevelDbm = inRangeOrUnavailable(-value(this, Property_rsrp),
+                            -140, -44);
+        break;
+    case WCDMA:
+    case GSM:
+        /* Return RSSI. Reference: TS 27.007 sub clause 8.5 */
+        signalLevelDbm = inRangeOrUnavailable(
+                            getRssiDbmFromAsu(value(this, Property_signalStrength)),
+                            -113, -51 );
+        break;
+    default:
+        break;
+    }
+
+    if (iSignalLevelDbm != signalLevelDbm) {
+        iSignalLevelDbm = signalLevelDbm;
+        Q_EMIT iParent->signalLevelDbmChanged();
+    }
+}
+
 // ==========================================================================
 // QOfonoExtCell
 // ==========================================================================
@@ -337,6 +387,11 @@ void QOfonoExtCell::setPath(QString aPath)
             Q_EMIT pathChanged();
         }
     }
+}
+
+int QOfonoExtCell::signalLevelDbm() const
+{
+    return iPrivate ? iPrivate->iSignalLevelDbm : InvalidValue;
 }
 
 #define PropertyGet_(x) \
