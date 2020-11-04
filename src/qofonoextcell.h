@@ -1,8 +1,7 @@
 /****************************************************************************
 **
-** Copyright (C) 2016-2017 Jolla Ltd.
+** Copyright (C) 2016-2020 Jolla Ltd.
 ** Copyright (C) 2020 Open Mobile Platform LLC.
-** Contact: Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -62,7 +61,8 @@ public:
         InvalidValue = INT_MAX
     };
 
-    explicit QOfonoExtCell(QObject* aParent = NULL);
+    explicit QOfonoExtCell(QObject* aParent = Q_NULLPTR);
+    QOfonoExtCell(QString aPath, bool aMayBlock); // Since 1.0.27
     QOfonoExtCell(QString aPath);
     ~QOfonoExtCell();
 
