@@ -1,7 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016-2017 Jolla Ltd.
-** Contact: Slava Monich <slava.monich@jolla.com>
+** Copyright (C) 2016-2020 Jolla Ltd.
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -17,6 +16,8 @@
 #include "qofonoext_p.h"
 
 #include <qofonomodem.h>
+
+static const QString kMethodGetCells("GetCells");
 
 typedef QMap<QString,QWeakPointer<QOfonoExtCellInfo> > QOfonoExtCellInfoMap;
 Q_GLOBAL_STATIC(QOfonoExtCellInfoMap, sharedInstances)
@@ -39,10 +40,10 @@ public:
             OFONO_BUS, aParent) {}
 
 public Q_SLOTS: // METHODS
-    QDBusPendingCall GetInterfaceVersion()
-        { return asyncCall("GetInterfaceVersion"); }
-    QDBusPendingCall GetCells()
-        { return asyncCall("GetCells"); }
+    QDBusPendingCall GetCellsAsync()
+        { return asyncCall(kMethodGetCells); }
+    QDBusMessage GetCellsSync()
+        { return call(kMethodGetCells); }
 
 Q_SIGNALS: // SIGNALS
     void CellsAdded(QList<QDBusObjectPath> aPaths);
@@ -63,13 +64,18 @@ public:
     Private(QOfonoExtCellInfo* aParent);
     QString modemPath() const;
     void setModemPath(QString aPath);
+    void setModemPathSyncInit(QString aPath);
 
 private:
-    void getCells();
+    void getCellsSyncInit();
+    void getCellsAsync();
     void invalidate();
+    void setModemPath(QString aPath, QSharedPointer<QOfonoModem> aModem, void (Private::*aGetCells)());
+    void checkInterfacePresence(void (Private::*getCellsFn)());
+    static QStringList getPaths(const QList<QDBusObjectPath> aPaths);
 
 private Q_SLOTS:
-    void checkInterfacePresence();
+    void onModemChanged();
     void onGetCellsFinished(QDBusPendingCallWatcher* aWatcher);
     void onCellsAdded(QList<QDBusObjectPath> aCells);
     void onCellsRemoved(QList<QDBusObjectPath> aCells);
@@ -94,38 +100,68 @@ QOfonoExtCellInfo::Private::Private(QOfonoExtCellInfo* aParent) :
 {
 }
 
-QString QOfonoExtCellInfo::Private::modemPath() const
+inline QString QOfonoExtCellInfo::Private::modemPath() const
 {
     return iModem.isNull() ? QString() : iModem->objectPath();
 }
 
-void QOfonoExtCellInfo::Private::setModemPath(QString aPath)
+inline void QOfonoExtCellInfo::Private::setModemPath(QString aPath)
+{
+    setModemPath(aPath, QOfonoModem::instance(aPath), &Private::getCellsAsync);
+}
+
+inline void QOfonoExtCellInfo::Private::setModemPathSyncInit(QString aPath)
+{
+    setModemPath(aPath, QOfonoModem::instance(aPath, true), &Private::getCellsSyncInit);
+}
+
+void QOfonoExtCellInfo::Private::setModemPath(QString aPath,
+    QSharedPointer<QOfonoModem> aModem, void (Private::*aGetCells)())
 {
     // Caller has checked the the path has actually changed
     invalidate();
     if (aPath.isEmpty()) {
-        iModem.clear();
+        if (iModem) {
+            iModem->disconnect(this);
+            iModem.clear();
+        }
     } else {
         if (iModem) iModem->disconnect(this);
-        iModem = QOfonoModem::instance(aPath);
+        iModem = aModem;
         connect(iModem.data(),
             SIGNAL(validChanged(bool)),
-            SLOT(checkInterfacePresence()));
+            SLOT(onModemChanged()));
         connect(iModem.data(),
             SIGNAL(interfacesChanged(QStringList)),
-            SLOT(checkInterfacePresence()));
-        checkInterfacePresence();
+            SLOT(onModemChanged()));
+        checkInterfacePresence(aGetCells);
     }
 }
 
-void QOfonoExtCellInfo::Private::getCells()
+void QOfonoExtCellInfo::Private::getCellsAsync()
 {
-    connect(new QDBusPendingCallWatcher(iProxy->GetCells(), iProxy),
+    connect(new QDBusPendingCallWatcher(iProxy->GetCellsAsync(), iProxy),
         SIGNAL(finished(QDBusPendingCallWatcher*)),
         SLOT(onGetCellsFinished(QDBusPendingCallWatcher*)));
 }
 
-void QOfonoExtCellInfo::Private::checkInterfacePresence()
+void QOfonoExtCellInfo::Private::getCellsSyncInit()
+{
+    QDBusPendingReply<QList<QDBusObjectPath> > reply(iProxy->GetCellsSync());
+    if (!reply.isError()) {
+        iCells = getPaths(reply.value());
+        iValid = true;
+    } else {
+        // Repeat call asynchronously on timeout
+        QDBusError error(reply.error());
+        qWarning() << error;
+        if (QOfonoExt::isTimeout(error)) {
+            getCellsAsync();
+        }
+    }
+}
+
+void QOfonoExtCellInfo::Private::checkInterfacePresence(void (Private::*aGetCells)())
 {
     if (iModem && iModem->isValid() &&
         iModem->interfaces().contains(QOfonoExtCellInfoProxy::INTERFACE)) {
@@ -138,7 +174,7 @@ void QOfonoExtCellInfo::Private::checkInterfacePresence()
                 connect(iProxy,
                     SIGNAL(CellsRemoved(QList<QDBusObjectPath>)),
                     SLOT(onCellsRemoved(QList<QDBusObjectPath>)));
-                getCells();
+                (this->*aGetCells)();
             } else {
                 invalidate();
             }
@@ -160,22 +196,29 @@ void QOfonoExtCellInfo::Private::invalidate()
     }
 }
 
+QStringList QOfonoExtCellInfo::Private::getPaths(const QList<QDBusObjectPath> aPaths)
+{
+    QStringList list;
+    const int n = aPaths.count();
+    for (int i = 0; i < n; i++) {
+        list.append(aPaths.at(i).path());
+    }
+    list.sort();
+    return list;
+}
+
 void QOfonoExtCellInfo::Private::onGetCellsFinished(QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<QList<QDBusObjectPath> > reply(*aWatcher);
     if (reply.isError()) {
         // Repeat the call on timeout
-        qWarning() << reply.error();
-        if (QOfonoExt::isTimeout(reply.error())) {
-            getCells();
+        QDBusError error(reply.error());
+        qWarning() << error;
+        if (QOfonoExt::isTimeout(error)) {
+            getCellsAsync();
         }
     } else {
-        QList<QDBusObjectPath> pathList = reply.value();
-        QStringList list;
-        for (int i=0; i<pathList.count(); i++) {
-            list.append(pathList.at(i).path());
-        }
-        list.sort();
+        const QStringList list(getPaths(reply.value()));
         if (iCells != list) {
             iCells = list;
             Q_EMIT iParent->cellsChanged();
@@ -186,6 +229,11 @@ void QOfonoExtCellInfo::Private::onGetCellsFinished(QDBusPendingCallWatcher* aWa
         }
     }
     aWatcher->deleteLater();
+}
+
+void QOfonoExtCellInfo::Private::onModemChanged()
+{
+    checkInterfacePresence(&Private::getCellsAsync);
 }
 
 void QOfonoExtCellInfo::Private::onCellsAdded(QList<QDBusObjectPath> aCells)
@@ -230,17 +278,35 @@ QOfonoExtCellInfo::QOfonoExtCellInfo(QObject* aParent) :
 {
 }
 
+QOfonoExtCellInfo::QOfonoExtCellInfo(QString aModemPath, QObject* aParent) : // Since 1.0.27
+    QObject(aParent),
+    iPrivate(new Private(this))
+{
+    iPrivate->setModemPathSyncInit(aModemPath); // Blocks
+}
+
 QOfonoExtCellInfo::~QOfonoExtCellInfo()
 {
 }
 
 QSharedPointer<QOfonoExtCellInfo> QOfonoExtCellInfo::instance(QString aPath)
 {
+    return instance(aPath, false); // Don't block
+}
+
+QSharedPointer<QOfonoExtCellInfo> QOfonoExtCellInfo::instance(QString aPath, bool aMayBlock) // Since 1.0.27
+{
     QSharedPointer<QOfonoExtCellInfo> ptr = sharedInstances()->value(aPath);
     if (ptr.isNull()) {
-        ptr = QSharedPointer<QOfonoExtCellInfo>(new QOfonoExtCellInfo, &QObject::deleteLater);
-        ptr->setModemPath(aPath);
-        ptr->iPrivate->iFixedPath = true;
+        QOfonoExtCellInfo* cellInfo;
+        if (aMayBlock) {
+            cellInfo = new QOfonoExtCellInfo(aPath); // Blocks
+        } else {
+            cellInfo = new QOfonoExtCellInfo();
+            cellInfo->setModemPath(aPath);
+        }
+        cellInfo->iPrivate->iFixedPath = true;
+        ptr = QSharedPointer<QOfonoExtCellInfo>(cellInfo, &QObject::deleteLater);
         sharedInstances()->insert(aPath, QWeakPointer<QOfonoExtCellInfo>(ptr));
     }
     return ptr;

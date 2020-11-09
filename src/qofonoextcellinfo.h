@@ -1,7 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2016 Jolla Ltd.
-** Contact: Slava Monich <slava.monich@jolla.com>
+** Copyright (C) 2016-2020 Jolla Ltd.
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -26,11 +25,13 @@ class QOFONOEXT_EXPORT QOfonoExtCellInfo : public QObject
     Q_PROPERTY(QStringList cells READ cells NOTIFY cellsChanged)
 
 public:
-    explicit QOfonoExtCellInfo(QObject* aParent = NULL);
+    explicit QOfonoExtCellInfo(QObject* aParent = Q_NULLPTR);
+    QOfonoExtCellInfo(QString aModemPath, QObject* aParent = Q_NULLPTR); // Blocks (since 1.0.27)
     ~QOfonoExtCellInfo();
 
     // Shared instance(s) for C++ use
     static QSharedPointer<QOfonoExtCellInfo> instance(QString aModemPath);
+    static QSharedPointer<QOfonoExtCellInfo> instance(QString aModemPath, bool aMayBlock); // Since 1.0.27
 
     QString modemPath() const;
     void setModemPath(QString aModemPath);
