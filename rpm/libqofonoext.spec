@@ -1,18 +1,21 @@
 Name:       libqofonoext
 
 Summary:    A library of Qt bindings for ofono extensions
-Version:    1.0.26
+Version:    1.0.27
 Release:    1
 License:    LGPLv2
 URL:        https://git.sailfishos.org/mer-core/libqofonoext
 Source0:    %{name}-%{version}.tar.bz2
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-Requires:       libqofono-qt5 >= 0.87
+
+%define libqofono_version 0.101
+
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(Qt5Quick)
-BuildRequires:  pkgconfig(qofono-qt5) >= 0.87
+BuildRequires:  pkgconfig(qofono-qt5) >= %{libqofono_version}
+Requires:       libqofono-qt5 >= %{libqofono_version}
 
 %{!?qtc_qmake5:%define qtc_qmake5 %qmake5}
 %{!?qtc_make:%define qtc_make make}
@@ -22,7 +25,6 @@ This package contains Qt bindings for ofono extensions
 
 %package declarative
 Summary:    Declarative plugin for %{name}
-Group:      Development/Tools
 Requires:   %{name} = %{version}-%{release}
 Requires:   %{name} = %{version}
 
@@ -31,7 +33,6 @@ This package contains declarative plugin for %{name}
 
 %package devel
 Summary:    Development files for %{name}
-Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   %{name} = %{version}
 
