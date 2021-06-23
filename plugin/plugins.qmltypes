@@ -68,6 +68,7 @@ Module {
         Property { name: "modemPath"; type: "string" }
         Property { name: "valid"; type: "bool"; isReadonly: true }
         Property { name: "cells"; type: "QStringList"; isReadonly: true }
+        Property { name: "active"; type: "bool" }
         Signal {
             name: "cellsAdded"
             Parameter { name: "cells"; type: "QStringList" }
