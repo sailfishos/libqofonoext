@@ -4,18 +4,24 @@ Summary:    A library of Qt bindings for ofono extensions
 Version:    1.0.27
 Release:    1
 License:    LGPLv2
-URL:        https://git.sailfishos.org/mer-core/libqofonoext
+URL:        https://github.com/sailfishos/libgofonoext
 Source0:    %{name}-%{version}.tar.bz2
-Requires(post): /sbin/ldconfig
-Requires(postun): /sbin/ldconfig
 
 %define libqofono_version 0.101
 
+BuildRequires:  pkgconfig
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(Qt5Quick)
 BuildRequires:  pkgconfig(qofono-qt5) >= %{libqofono_version}
-Requires:       libqofono-qt5 >= %{libqofono_version}
+
+# license macro requires rpm >= 4.11
+BuildRequires:  pkgconfig(rpm)
+%define license_support %(pkg-config --exists 'rpm >= 4.11'; echo $?)
+
+Requires:   libqofono-qt5 >= %{libqofono_version}
+Requires(post): /sbin/ldconfig
+Requires(postun): /sbin/ldconfig
 
 %{!?qtc_qmake5:%define qtc_qmake5 %qmake5}
 %{!?qtc_make:%define qtc_make make}
@@ -57,6 +63,9 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %{_libdir}/%{name}.so.*
+%if %{license_support} == 0
+%license LICENSE.LGPL
+%endif
 
 %files declarative
 %defattr(-,root,root,-)
