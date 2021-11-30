@@ -18,10 +18,12 @@
 
 #include <QtCore>
 
-#if defined(QOFONOEXT_LIBRARY)
-#  define QOFONOEXT_EXPORT Q_DECL_EXPORT
-#else
-#  define QOFONOEXT_EXPORT Q_DECL_IMPORT
-#endif
+#ifndef QOFONOEXT_EXPORT
+#  if defined(QOFONOEXT_LIBRARY)
+#    define QOFONOEXT_EXPORT Q_DECL_EXPORT
+#  else
+#    define QOFONOEXT_EXPORT Q_DECL_IMPORT
+#  endif
+#endif // QOFONOEXT_EXPORT
 
 #endif // QOFONOEXT_TYPES_H
