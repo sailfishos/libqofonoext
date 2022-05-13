@@ -68,7 +68,7 @@ public Q_SLOTS: // METHODS
     QDBusPendingCall SetDefaultVoiceSim(const QString &aImsi)
         { return asyncCall("SetDefaultVoiceSim", aImsi); }
     QDBusPendingCall SetEnabledModems(QList<QDBusObjectPath> aModems)
-        { return asyncCall("SetEnabledModems", qVariantFromValue(aModems)); }
+        { return asyncCall("SetEnabledModems", QVariant::fromValue(aModems)); }
 
 Q_SIGNALS: // SIGNALS
     void DefaultDataModemChanged(QString aPath);
