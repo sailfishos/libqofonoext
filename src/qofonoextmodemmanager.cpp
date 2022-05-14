@@ -1,7 +1,7 @@
 /****************************************************************************
 **
-** Copyright (C) 2015-2021 Jolla Ltd.
-** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
+** Copyright (C) 2015-2022 Jolla Ltd.
+** Copyright (C) 2015-2022 Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -37,7 +37,6 @@ public:
         QString iName;
         int iCount;
     };
-
 
     QOfonoExtModemManagerProxy(QObject* aParent) :
         QDBusAbstractInterface(OFONO_SERVICE, "/",
