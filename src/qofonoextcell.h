@@ -44,6 +44,14 @@ class QOFONOEXT_EXPORT QOfonoExtCell : public QObject
     Q_PROPERTY(int rssnr READ rssnr NOTIFY rssnrChanged)
     Q_PROPERTY(int cqi READ cqi NOTIFY cqiChanged)
     Q_PROPERTY(int timingAdvance READ timingAdvance NOTIFY timingAdvanceChanged)
+    Q_PROPERTY(qint64 nci READ nci NOTIFY nciChanged)
+    Q_PROPERTY(int nrarfcn READ nrarfcn NOTIFY nrarfcnChanged)
+    Q_PROPERTY(int ssRsrp READ ssRsrp NOTIFY ssRsrpChanged)
+    Q_PROPERTY(int ssRsrq READ ssRsrq NOTIFY ssRsrqChanged)
+    Q_PROPERTY(int ssSinr READ ssSinr NOTIFY ssSinrChanged)
+    Q_PROPERTY(int csiRsrp READ csiRsrp NOTIFY csiRsrpChanged)
+    Q_PROPERTY(int csiRsrq READ csiRsrq NOTIFY csiRsrqChanged)
+    Q_PROPERTY(int csiSinr READ csiSinr NOTIFY csiSinrChanged)
     Q_PROPERTY(int signalLevelDbm READ signalLevelDbm NOTIFY signalLevelDbmChanged)
     Q_ENUMS(Type)
     Q_ENUMS(Constants)
@@ -54,11 +62,13 @@ public:
         GSM,
         WCDMA,
         LTE,
+        NR,
         UNKNOWN = Unknown // For backward compatibility
     };
 
     enum Constants {
-        InvalidValue = INT_MAX
+        InvalidValue = INT_MAX,
+        InvalidValue64 = INT64_MAX
     };
 
     explicit QOfonoExtCell(QObject* aParent = Q_NULLPTR);
@@ -94,14 +104,26 @@ public:
 
     // LTE:
     int ci() const;
-    int pci() const;
-    int tac() const;
     int earfcn() const;
     int rsrp() const;
     int rsrq() const;
     int rssnr() const;
     int cqi() const;
     int timingAdvance() const;
+
+    // LTE and NR:
+    int pci() const;
+    int tac() const;
+
+    // NR:
+    qint64 nci() const;
+    int nrarfcn() const;
+    int ssRsrp() const;
+    int ssRsrq() const;
+    int ssSinr() const;
+    int csiRsrp() const;
+    int csiRsrq() const;
+    int csiSinr() const;
 
 Q_SIGNALS:
     void validChanged();
@@ -127,8 +149,17 @@ Q_SIGNALS:
     void rssnrChanged();
     void cqiChanged();
     void timingAdvanceChanged();
+    void nciChanged();
+    void nrarfcnChanged();
+    void ssRsrpChanged();
+    void ssRsrqChanged();
+    void ssSinrChanged();
+    void csiRsrpChanged();
+    void csiRsrqChanged();
+    void csiSinrChanged();
     void signalLevelDbmChanged();
-    void propertyChanged(QString name, int value);
+    void propertyChanged(QString name, int value); // int properties
+    void propertyChanged64(QString name, qint64 value); // 64-bit properties
     void removed();
 
 private:
