@@ -20,6 +20,7 @@ Module {
                 "GSM": 1,
                 "WCDMA": 2,
                 "LTE": 3,
+                "NR": 4,
                 "UNKNOWN": 0
             }
         }
@@ -52,6 +53,14 @@ Module {
         Property { name: "rssnr"; type: "int"; isReadonly: true }
         Property { name: "cqi"; type: "int"; isReadonly: true }
         Property { name: "timingAdvance"; type: "int"; isReadonly: true }
+        Property { name: "nci"; type: "qint64"; isReadonly: true }
+        Property { name: "nrarfcn"; type: "int"; isReadonly: true }
+        Property { name: "ssRsrp"; type: "int"; isReadonly: true }
+        Property { name: "ssRsrq"; type: "int"; isReadonly: true }
+        Property { name: "ssSinr"; type: "int"; isReadonly: true }
+        Property { name: "csiRsrp"; type: "int"; isReadonly: true }
+        Property { name: "csiRsrq"; type: "int"; isReadonly: true }
+        Property { name: "csiSinr"; type: "int"; isReadonly: true }
         Property { name: "signalLevelDbm"; type: "int"; isReadonly: true }
         Signal {
             name: "propertyChanged"
