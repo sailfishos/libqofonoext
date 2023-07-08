@@ -2,3 +2,14 @@
 build
 .DS_Store
 *.pro.user
+.qmake.stash
+Makefile
+plugin/Makefile
+plugin/libqofonoextdeclarative*.so*
+src/Makefile
+src/libqofonoext*.prl
+src/libqofonoext*.so*
+src/pkgconfig/
+moc_*
+*.o
+*.moc

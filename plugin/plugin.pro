@@ -1,7 +1,7 @@
 TARGET=qofonoextdeclarative
 TEMPLATE = lib
 CONFIG += plugin link_pkgconfig
-PKGCONFIG += qofono-qt5
+PKGCONFIG += qofono-qt$${QT_MAJOR_VERSION}
 QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-psabi
 
 QT_VERSION=$$[QT_VERSION]
