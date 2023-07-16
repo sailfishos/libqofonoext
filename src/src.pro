@@ -1,6 +1,6 @@
 TARGET = qofonoext
 CONFIG += create_pc create_prl no_install_prl link_pkgconfig
-PKGCONFIG += qofono-qt5
+PKGCONFIG += qofono-qt$${QT_MAJOR_VERSION}
 
 QT += dbus
 QT -= gui
