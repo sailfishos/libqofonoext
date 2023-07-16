@@ -1,7 +1,7 @@
 /****************************************************************************
 **
+** Copyright (C) 2015-2023 Slava Monich <slava@monich.com>
 ** Copyright (C) 2015-2021 Jolla Ltd.
-** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -68,7 +68,7 @@ public:
 
     enum Constants {
         InvalidValue = INT_MAX,
-        InvalidValue64 = INT64_MAX
+        InvalidValue64 = LLONG_MAX
     };
 
     explicit QOfonoExtCell(QObject* aParent = Q_NULLPTR);

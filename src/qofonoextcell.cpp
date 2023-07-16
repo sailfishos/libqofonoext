@@ -1,7 +1,7 @@
 /****************************************************************************
 **
+** Copyright (C) 2015-2023 Slava Monich <slava@monich.com>
 ** Copyright (C) 2015-2021 Jolla Ltd.
-** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
 ** GNU Lesser General Public License Usage
 ** Alternatively, this file may be used under the terms of the GNU Lesser
@@ -26,8 +26,12 @@ namespace {
     const QString kMethodGetAll("GetAll");
 }
 
-#define QOFONOEXT_INVALID_VALUE   INT_MAX
-#define QOFONOEXT_INVALID_VALUE64 INT64_MAX
+#define QOFONOEXT_INVALID_VALUE   ((int)QOfonoExtCell::InvalidValue)
+#define QOFONOEXT_INVALID_VALUE64 ((qint64)QOfonoExtCell::InvalidValue64)
+
+#ifdef INT64_MAX
+Q_STATIC_ASSERT(QOFONOEXT_INVALID_VALUE64 == INT64_MAX);
+#endif
 
 #define CELL_PROPERTIES(p) \
     p(mcc) p(mnc) p(signalStrength) p(lac) p(cid) p(arfcn) p(bsic) \
