@@ -1,7 +1,7 @@
 Name:       libqofonoext
 
 Summary:    A library of Qt bindings for ofono extensions
-Version:    1.0.30
+Version:    1.0.31
 Release:    1
 License:    LGPLv2
 URL:        https://github.com/sailfishos/libqofonoext
