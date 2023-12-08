@@ -66,7 +66,7 @@ public:
         UNKNOWN = Unknown // For backward compatibility
     };
 
-    enum Constants {
+    enum Constants : quint64 {
         InvalidValue = INT_MAX,
         InvalidValue64 = LLONG_MAX
     };
