@@ -55,9 +55,9 @@ class QOfonoExtCellProxy: public QDBusAbstractInterface
     Q_OBJECT
 
 public:
-    QOfonoExtCellProxy(QString aPath, QObject* aParent) :
-        QDBusAbstractInterface(OFONO_SERVICE, aPath,
-            "org.nemomobile.ofono.Cell", OFONO_BUS, aParent) {}
+    QOfonoExtCellProxy(const QString &aPath, QObject *aParent)
+        : QDBusAbstractInterface(OFONO_SERVICE, aPath,
+                                 "org.nemomobile.ofono.Cell", OFONO_BUS, aParent) {}
 
 public Q_SLOTS: // METHODS
     QDBusPendingCall GetAllAsync()
@@ -234,10 +234,9 @@ void QOfonoExtCell::Private::updateAllAsync()
             getAllAsync();
         }
     } else {
-        if (iPendingGetAll) {
-            delete iPendingGetAll;
-            iPendingGetAll = Q_NULLPTR;
-        }
+        delete iPendingGetAll;
+        iPendingGetAll = Q_NULLPTR;
+
         if (iValid) {
             iValid = false;
             Q_EMIT cell()->validChanged();
@@ -258,10 +257,9 @@ int QOfonoExtCell::Private::inRange(int aValue, int aMin, int aMax)
 
 void QOfonoExtCell::Private::getAllSyncInit()
 {
-    if (iPendingGetAll) {
-        delete iPendingGetAll;
-        iPendingGetAll = NULL;
-    }
+    delete iPendingGetAll;
+    iPendingGetAll = NULL;
+
     GetAllReply reply(GetAllSync());
     if (!reply.isError()) {
         handleGetAllReply(reply, false);
