@@ -44,7 +44,8 @@ class QOFONOEXT_EXPORT QOfonoExtCell : public QObject
     Q_PROPERTY(int rssnr READ rssnr NOTIFY rssnrChanged)
     Q_PROPERTY(int cqi READ cqi NOTIFY cqiChanged)
     Q_PROPERTY(int timingAdvance READ timingAdvance NOTIFY timingAdvanceChanged)
-    Q_PROPERTY(qint64 nci READ nci NOTIFY nciChanged)
+    // string to allow easy usage from qml
+    Q_PROPERTY(QString nci READ nciString NOTIFY nciChanged)
     Q_PROPERTY(int nrarfcn READ nrarfcn NOTIFY nrarfcnChanged)
     Q_PROPERTY(int ssRsrp READ ssRsrp NOTIFY ssRsrpChanged)
     Q_PROPERTY(int ssRsrq READ ssRsrq NOTIFY ssRsrqChanged)
@@ -67,8 +68,7 @@ public:
     };
 
     enum Constants {
-        InvalidValue = INT_MAX,
-        InvalidValue64 = LLONG_MAX
+        InvalidValue = INT_MAX
     };
 
     explicit QOfonoExtCell(QObject* aParent = Q_NULLPTR);
@@ -116,7 +116,7 @@ public:
     int tac() const;
 
     // NR:
-    qint64 nci() const;
+    QString nciString() const;
     int nrarfcn() const;
     int ssRsrp() const;
     int ssRsrq() const;
@@ -159,7 +159,6 @@ Q_SIGNALS:
     void csiSinrChanged();
     void signalLevelDbmChanged();
     void propertyChanged(QString name, int value); // int properties
-    void propertyChanged64(QString name, qint64 value); // 64-bit properties
     void removed();
 
 private:
