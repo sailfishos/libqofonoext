@@ -58,7 +58,7 @@ public Q_SLOTS: // METHODS
         { return call(kMethodGetAll); }
 
 Q_SIGNALS: // SIGNALS
-    void PropertyChanged(QString aName, QDBusVariant aValue);
+    void PropertyChanged(const QString &aName, const QDBusVariant &aValue);
     void RegisteredChanged(bool aRegistered);
     void Removed();
 };
@@ -94,12 +94,12 @@ public:
         QVariantMap>  // 3. properties
         GetAllReply;
 
-    Private(QString aPath, QOfonoExtCell* aParent);
+    Private(const QString &aPath, QOfonoExtCell *aParent);
     void getAllSyncInit();
 
     static int valueInt(Private* aThis, Property aProperty);
-    static Type typeFromString(QString aType);
-    static Property propertyFromString(QString aProperty);
+    static Type typeFromString(const QString &aType);
+    static Property propertyFromString(const QString &aProperty);
     static int getRssiDbm(int aSignalStrength);
     static int inRange(int aValue, int aRangeMin, int aRangeMax);
 
@@ -117,7 +117,7 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void onGetAllFinished(QDBusPendingCallWatcher* aWatcher);
-    void onPropertyChanged(QString aName, QDBusVariant aValue);
+    void onPropertyChanged(const QString &aName, const QDBusVariant &aValue);
     void onRegisteredChanged(bool aRegistered);
 
 public:
@@ -143,7 +143,7 @@ const QOfonoExtCell::Private::PropertyDesc QOfonoExtCell::Private::Properties[] 
     CELL_PROPERTIES(PropertyDesc_)
 };
 
-QOfonoExtCell::Private::Private(QString aPath, QOfonoExtCell* aParent) :
+QOfonoExtCell::Private::Private(const QString &aPath, QOfonoExtCell *aParent) :
     QOfonoExtCellProxy(aPath, aParent),
     iValid(false),
     iRegistered(false),
@@ -176,7 +176,7 @@ inline QOfonoExtCell* QOfonoExtCell::Private::cell()
     return qobject_cast<QOfonoExtCell*>(parent());
 }
 
-QOfonoExtCell::Type QOfonoExtCell::Private::typeFromString(QString aType)
+QOfonoExtCell::Type QOfonoExtCell::Private::typeFromString(const QString &aType)
 {
     return (aType == kTypeGsm) ? GSM :
            (aType == kTypeLte) ? LTE :
@@ -185,7 +185,7 @@ QOfonoExtCell::Type QOfonoExtCell::Private::typeFromString(QString aType)
            UNKNOWN;
 }
 
-QOfonoExtCell::Private::Property QOfonoExtCell::Private::propertyFromString(QString aProperty)
+QOfonoExtCell::Private::Property QOfonoExtCell::Private::propertyFromString(const QString &aProperty)
 {
     for (int i=PropertyUnknown+1; i<PropertyCount; i++) {
         if (Properties[i].name == aProperty) {
@@ -348,7 +348,7 @@ void QOfonoExtCell::Private::invalidateValues()
     iNci = INT64_MAX;
 }
 
-void QOfonoExtCell::Private::onPropertyChanged(QString aName, QDBusVariant aValue)
+void QOfonoExtCell::Private::onPropertyChanged(const QString &aName, const QDBusVariant &aValue)
 {
     bool ok = false;
     int intValue = aValue.variant().toInt(&ok);
