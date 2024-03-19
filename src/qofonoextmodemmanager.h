@@ -40,7 +40,7 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
     Q_PROPERTY(int errorCount READ errorCount NOTIFY errorCountChanged)
 
 public:
-    explicit QOfonoExtModemManager(QObject* aParent = NULL);
+    explicit QOfonoExtModemManager(QObject *parent = nullptr);
     ~QOfonoExtModemManager();
 
     bool valid() const;
