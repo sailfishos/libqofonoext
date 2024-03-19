@@ -53,7 +53,7 @@ Module {
         Property { name: "rssnr"; type: "int"; isReadonly: true }
         Property { name: "cqi"; type: "int"; isReadonly: true }
         Property { name: "timingAdvance"; type: "int"; isReadonly: true }
-        Property { name: "nci"; type: "qint64"; isReadonly: true }
+        Property { name: "nci"; type: "string"; isReadonly: true }
         Property { name: "nrarfcn"; type: "int"; isReadonly: true }
         Property { name: "ssRsrp"; type: "int"; isReadonly: true }
         Property { name: "ssRsrq"; type: "int"; isReadonly: true }
