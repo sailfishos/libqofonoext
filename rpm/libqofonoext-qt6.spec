@@ -1,4 +1,4 @@
-Name:       libqofonoext
+Name:       libqofonoext-qt6
 
 Summary:    A library of Qt bindings for ofono extensions
 Version:    1.0.32
@@ -11,16 +11,16 @@ Source0:    %{name}-%{version}.tar.bz2
 
 BuildRequires:  cmake
 BuildRequires:  pkgconfig
-BuildRequires:  pkgconfig(Qt5Core)
-BuildRequires:  pkgconfig(Qt5DBus)
-BuildRequires:  pkgconfig(Qt5Quick)
-BuildRequires:  pkgconfig(qofono-qt5) >= %{libqofono_version}
+BuildRequires:  pkgconfig(Qt6Core)
+BuildRequires:  pkgconfig(Qt6DBus)
+BuildRequires:  pkgconfig(Qt6Quick)
+BuildRequires:  pkgconfig(qofono-qt6) >= %{libqofono_version}
 
 # license macro requires rpm >= 4.11
 BuildRequires:  pkgconfig(rpm)
 %define license_support %(pkg-config --exists 'rpm >= 4.11'; echo $?)
 
-Requires:   libqofono-qt5 >= %{libqofono_version}
+Requires:   libqofono-qt6 >= %{libqofono_version}
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 
@@ -47,7 +47,7 @@ This package contains the development header files for %{name}
 %setup -q -n %{name}-%{version}
 
 %build
-%cmake . -DLIBQOFONOEXT_VERSION=$(sed 's/+.*//' <<<"%{version}")
+%cmake . -DLIBQOFONOEXT_VERSION=$(sed 's/+.*//' <<<"%{version}") -DQT_MAJOR_VERSION=6
 %cmake_build
 
 %install
@@ -64,9 +64,9 @@ This package contains the development header files for %{name}
 %endif
 
 %files declarative
-%{_libdir}/qt5/qml/org/nemomobile/ofono
+%{_libdir}/qt6/qml/org/nemomobile/ofono
 
 %files devel
 %{_libdir}/%{name}.so
-%{_libdir}/pkgconfig/qofonoext.pc
-%{_includedir}/qofonoext/*.h
+%{_libdir}/pkgconfig/qofonoext-qt6.pc
+%{_includedir}/qofonoext-qt6/*.h
