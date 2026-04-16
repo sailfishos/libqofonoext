@@ -42,9 +42,12 @@ install(FILES ${PUBLIC_HEADER_FILES}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qofonoext${QTVERSION_SUFFIX}
 )
 
-# pkg-config file (qmake create_pc)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/qofonoext.pc.in ${CMAKE_CURRENT_BINARY_DIR}/qofonoext${QTVERSION_SUFFIX}.pc @ONLY)
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qofonoext${QTVERSION_SUFFIX}.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+include(ECMGeneratePkgConfigFile)
+ecm_generate_pkgconfig_file(
+    BASE_NAME qofonoext
+    INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}/qofonoext${QTVERSION_SUFFIX}
+    URL https://github.com/sailfishos/libqofonoext
+    DESCRIPTION "Qt bindings for ofono extensions"
+    INSTALL
 )
+

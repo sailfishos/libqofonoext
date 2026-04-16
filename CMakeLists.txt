@@ -13,6 +13,9 @@ project(libqofonoext
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
+find_package(ECM REQUIRED NO_MODULE)
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+
 include(GNUInstallDirs)
 include(FeatureSummary)
 find_package(PkgConfig)

@@ -10,6 +10,7 @@ Source0:    %{name}-%{version}.tar.bz2
 %define libqofono_version 0.101
 
 BuildRequires:  cmake
+BuildRequires:  extra-cmake-modules
 BuildRequires:  pkgconfig
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5DBus)
