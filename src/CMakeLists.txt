@@ -44,7 +44,7 @@ install(FILES ${PUBLIC_HEADER_FILES}
 
 include(ECMGeneratePkgConfigFile)
 ecm_generate_pkgconfig_file(
-    BASE_NAME qofonoext
+    BASE_NAME qofonoext${QTVERSION_SUFFIX}
     INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}/qofonoext${QTVERSION_SUFFIX}
     URL https://github.com/sailfishos/libqofonoext
     DESCRIPTION "Qt bindings for ofono extensions"
