@@ -45,7 +45,8 @@ public:
         PreferredLanguagesRole,
         PinRetriesRole,
         FixedDialingRole,
-        BarredDialingRole
+        BarredDialingRole,
+        LabelRole // Since 1.2.0
     };
 
     explicit QOfonoExtSimListModel(QObject* parent = Q_NULLPTR);
@@ -54,9 +55,11 @@ public:
     int count() const;
 
 protected:
+    Qt::ItemFlags flags(const QModelIndex&) const Q_DECL_OVERRIDE;
     QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
     int rowCount(const QModelIndex&) const Q_DECL_OVERRIDE;
     QVariant data(const QModelIndex&, int) const Q_DECL_OVERRIDE;
+    bool setData(const QModelIndex&, const QVariant&, int) Q_DECL_OVERRIDE;
 
 Q_SIGNALS:
     void validChanged();

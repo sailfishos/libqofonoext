@@ -34,7 +34,7 @@ class QOfonoExtSimInfoProxy:
 
 public:
     static const QString INTERFACE;
-    QOfonoExtSimInfoProxy(QString aPath, QObject* aParent) :
+    QOfonoExtSimInfoProxy(const QString& aPath, QObject* aParent) :
         QDBusAbstractInterface(OFONO_SERVICE, aPath, qPrintable(INTERFACE),
             OFONO_BUS, aParent) {}
 
@@ -43,11 +43,16 @@ public Q_SLOTS: // METHODS
         { return asyncCall("GetInterfaceVersion"); }
     QDBusPendingCall GetAll()
         { return asyncCall("GetAll"); }
+    QDBusPendingCall GetAll2()
+        { return asyncCall("GetAll2"); }
+    QDBusPendingCall SetCardLabel(const QString& aLabel)
+        { return asyncCall("SetCardLabel", aLabel); }
 
 Q_SIGNALS: // SIGNALS
     void CardIdentifierChanged(QString);
     void ServiceProviderNameChanged(QString);
     void SubscriberIdentityChanged(QString);
+    void CardLabelChanged(QString);
 };
 
 const QString QOfonoExtSimInfoProxy::INTERFACE("org.nemomobile.ofono.SimInfo");
@@ -69,21 +74,29 @@ public:
     QString iCardIdentifier;
     QString iSubscriberIdentity;
     QString iServiceProviderName;
+    QString iCardLabel;
+    QScopedPointer<QString> iSetCardLabel;
 
     Private(QOfonoExtSimInfo*);
 
     QOfonoExtSimInfo* parentObject() const;
     QString modemPath() const;
     void setModemPath(const QString&);
+    void setCardLabel(const QString&);
     void invalidate();
+    void getInterfaceVersion();
     void getAll();
+    void getAll2();
 
 private: // SLOTS
     void checkInterfacePresence();
+    void onGetInterfaceVersionFinished(QDBusPendingCallWatcher*);
     void onGetAllFinished(QDBusPendingCallWatcher*);
+    void onGetAll2Finished(QDBusPendingCallWatcher*);
     void onCardIdentifierChanged(const QString&);
     void onSubscriberIdentityChanged(const QString&);
     void onServiceProviderNameChanged(const QString&);
+    void onCardLabelChanged(const QString&);
 };
 
 QOfonoExtSimInfo::Private::Private(
@@ -110,9 +123,9 @@ QOfonoExtSimInfo::Private::setModemPath(
     const QString& aPath)
 {
     if (aPath != modemPath()) {
-        invalidate();
         if (aPath.isEmpty()) {
             iModem.clear();
+            invalidate();
         } else {
             if (iModem) iModem->disconnect(this);
             iModem = QOfonoModem::instance(aPath);
@@ -120,9 +133,22 @@ QOfonoExtSimInfo::Private::setModemPath(
                 this, &Private::checkInterfacePresence);
             connect(iModem.data(), &QOfonoModem::interfacesChanged,
                 this, &Private::checkInterfacePresence);
+            invalidate();
             checkInterfacePresence();
         }
         Q_EMIT parentObject()->modemPathChanged(modemPath());
+    }
+}
+
+void
+QOfonoExtSimInfo::Private::setCardLabel(
+    const QString& aLabel)
+{
+    // It won't work if API v2 is not supported by ofono... But at least we try
+    if (iProxy) {
+        iProxy->SetCardLabel(aLabel);
+    } else {
+        iSetCardLabel.reset(new QString(aLabel));
     }
 }
 
@@ -140,7 +166,14 @@ QOfonoExtSimInfo::Private::checkInterfacePresence()
                     this, &Private::onSubscriberIdentityChanged);
                 connect(iProxy, &QOfonoExtSimInfoProxy::ServiceProviderNameChanged,
                     this, &Private::onServiceProviderNameChanged);
-                getAll();
+                connect(iProxy, &QOfonoExtSimInfoProxy::CardLabelChanged,
+                    this, &Private::onCardLabelChanged);
+                if (iSetCardLabel) {
+                    // Hope that API v2 is supported by ofono
+                    iProxy->SetCardLabel(*iSetCardLabel);
+                    iSetCardLabel.reset();
+                }
+                getInterfaceVersion();
             } else {
                 invalidate();
             }
@@ -164,10 +197,47 @@ QOfonoExtSimInfo::Private::invalidate()
 }
 
 void
+QOfonoExtSimInfo::Private::getInterfaceVersion()
+{
+    connect(new QDBusPendingCallWatcher(iProxy->GetInterfaceVersion(), iProxy),
+        &QDBusPendingCallWatcher::finished, this,
+        &Private::onGetInterfaceVersionFinished);
+}
+
+void
 QOfonoExtSimInfo::Private::getAll()
 {
     connect(new QDBusPendingCallWatcher(iProxy->GetAll(), iProxy),
-        &QDBusPendingCallWatcher::finished, this, &Private::onGetAllFinished);
+        &QDBusPendingCallWatcher::finished, this,
+        &Private::onGetAllFinished);
+}
+
+void
+QOfonoExtSimInfo::Private::getAll2()
+{
+    connect(new QDBusPendingCallWatcher(iProxy->GetAll2(), iProxy),
+        &QDBusPendingCallWatcher::finished, this,
+        &Private::onGetAll2Finished);
+}
+
+void
+QOfonoExtSimInfo::Private::onGetInterfaceVersionFinished(
+    QDBusPendingCallWatcher* aWatcher)
+{
+    QDBusPendingReply<int> reply(*aWatcher);
+
+    if (reply.isError()) {
+        // Repeat the call on timeout
+        qWarning() << reply.error();
+        if (QOfonoExt::isTimeout(reply.error())) {
+            getInterfaceVersion();
+        }
+    } else if (reply.value() < 2) {
+        getAll();
+    } else {
+        getAll2();
+    }
+    aWatcher->deleteLater();
 }
 
 void
@@ -213,6 +283,54 @@ QOfonoExtSimInfo::Private::onGetAllFinished(
 }
 
 void
+QOfonoExtSimInfo::Private::onGetAll2Finished(
+    QDBusPendingCallWatcher* aWatcher)
+{
+    QDBusPendingReply<int,          // InterfaceVersion
+                      QString,      // CardIdentifier
+                      QString,      // SubscriberIdentity
+                      QString,      // ServiceProviderName
+                      QString>      // CardLabel
+        reply(*aWatcher);
+
+    if (reply.isError()) {
+        // Repeat the call on timeout
+        qWarning() << reply.error();
+        if (QOfonoExt::isTimeout(reply.error())) {
+            getAll2();
+        }
+    } else {
+        QOfonoExtSimInfo* obj = parentObject();
+        const QString iccid(reply.argumentAt<1>());
+        const QString imsi(reply.argumentAt<2>());
+        const QString spn(reply.argumentAt<3>());
+        const QString label(reply.argumentAt<4>());
+
+        if (iCardIdentifier != iccid) {
+            iCardIdentifier = iccid;
+            Q_EMIT obj->cardIdentifierChanged(iccid);
+        }
+        if (iSubscriberIdentity != imsi) {
+            iSubscriberIdentity = imsi;
+            Q_EMIT obj->subscriberIdentityChanged(imsi);
+        }
+        if (iServiceProviderName != spn) {
+            iServiceProviderName = spn;
+            Q_EMIT obj->serviceProviderNameChanged(spn);
+        }
+        if (iCardLabel != label) {
+            iCardLabel = label;
+            Q_EMIT obj->cardLabelChanged(label);
+        }
+        if (!iValid) {
+            iValid = true;
+            Q_EMIT obj->validChanged(iValid);
+        }
+    }
+    aWatcher->deleteLater();
+}
+
+void
 QOfonoExtSimInfo::Private::onCardIdentifierChanged(
     const QString& aValue)
 {
@@ -238,7 +356,22 @@ QOfonoExtSimInfo::Private::onServiceProviderNameChanged(
 {
     if (iServiceProviderName != aValue) {
         iServiceProviderName = aValue;
-        Q_EMIT parentObject()->serviceProviderNameChanged(aValue);
+        QOfonoExtSimInfo* obj = parentObject();
+
+        Q_EMIT obj->serviceProviderNameChanged(aValue);
+        if (iCardLabel.isEmpty()) {
+            Q_EMIT obj->cardLabelChanged(aValue);
+        }
+    }
+}
+
+void
+QOfonoExtSimInfo::Private::onCardLabelChanged(
+    const QString& aValue)
+{
+    if (iCardLabel != aValue) {
+        iCardLabel = aValue;
+        Q_EMIT parentObject()->cardLabelChanged(aValue);
     }
 }
 
@@ -267,6 +400,13 @@ QOfonoExtSimInfo::modemPath() const
     return iPrivate->modemPath();
 }
 
+void
+QOfonoExtSimInfo::setModemPath(
+    QString aPath)
+{
+    iPrivate->setModemPath(aPath);
+}
+
 QString
 QOfonoExtSimInfo::cardIdentifier() const
 {
@@ -285,10 +425,18 @@ QOfonoExtSimInfo::serviceProviderName() const
     return iPrivate->iServiceProviderName;
 }
 
-void
-QOfonoExtSimInfo::setModemPath(QString aPath)
+// Since 1.2.0
+QString
+QOfonoExtSimInfo::cardLabel() const
 {
-    iPrivate->setModemPath(aPath);
+    return iPrivate->iCardLabel;
+}
+
+void
+QOfonoExtSimInfo::setCardLabel(
+    QString aLabel)
+{
+    iPrivate->setCardLabel(aLabel);
 }
 
 #include "qofonoextsiminfo.moc"

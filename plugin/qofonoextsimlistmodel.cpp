@@ -31,6 +31,7 @@ public:
 private: // SLOTS
     template <Role role> void propertyChanged();
     void onValidChanged();
+    void onCardLabelChanged();
 
 private:
     QOfonoExtSimListModel* parentModel() const;
@@ -70,6 +71,8 @@ QOfonoExtSimListModel::SimData::SimData(
         this, &SimData::propertyChanged<SubscriberIdentityRole>);
     connect(iCache, &QOfonoExtSimInfo::serviceProviderNameChanged,
         this, &SimData::propertyChanged<ServiceProviderNameRole>);
+    connect(iCache, &QOfonoExtSimInfo::cardLabelChanged,
+        this, &SimData::propertyChanged<LabelRole>);
 
     connect(iModemManager.data(), &QOfonoExtModemManager::validChanged,
         this, &SimData::onValidChanged);
@@ -189,6 +192,13 @@ QOfonoExtSimListModel::count() const
     return iSimList.count();
 }
 
+Qt::ItemFlags
+QOfonoExtSimListModel::flags(
+    const QModelIndex& aIndex) const
+{
+    return QAbstractListModel::flags(aIndex) | Qt::ItemIsEditable;
+}
+
 QHash<int,QByteArray>
 QOfonoExtSimListModel::roleNames() const
 {
@@ -209,6 +219,7 @@ QOfonoExtSimListModel::roleNames() const
     roles[PinRetriesRole]          = "pinRetries";
     roles[FixedDialingRole]        = "fixedDialing";
     roles[BarredDialingRole]       = "barredDialing";
+    roles[LabelRole]               = "label";
     return roles;
 }
 
@@ -246,11 +257,31 @@ QOfonoExtSimListModel::data(
         case BarredDialingRole:       return d->iSim->barredDialing();
         case SubscriberIdentityRole:  return d->iCache->subscriberIdentity();
         case ServiceProviderNameRole: return d->iCache->serviceProviderName();
+        case LabelRole:               return d->iCache->cardLabel();
         }
     } else {
         qWarning() << aIndex << aRole;
     }
     return QVariant();
+}
+
+bool
+QOfonoExtSimListModel::setData(
+    const QModelIndex& aIndex,
+    const QVariant& aValue,
+    int aRole)
+{
+    const int row = aIndex.row();
+
+    if (row >= 0 && row < iSimList.count()) {
+        if (aRole == LabelRole) {
+            const SimData* d = iSimList.at(row);
+
+            d->iCache->setCardLabel(aValue.toString());
+            return true;
+        }
+    }
+    return QAbstractListModel::setData(aIndex, aValue, aRole);
 }
 
 void

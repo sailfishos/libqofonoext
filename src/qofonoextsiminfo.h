@@ -28,6 +28,7 @@ class QOFONOEXT_EXPORT QOfonoExtSimInfo :
     Q_PROPERTY(QString cardIdentifier READ cardIdentifier NOTIFY cardIdentifierChanged)
     Q_PROPERTY(QString subscriberIdentity READ subscriberIdentity NOTIFY subscriberIdentityChanged)
     Q_PROPERTY(QString serviceProviderName READ serviceProviderName NOTIFY serviceProviderNameChanged)
+    Q_PROPERTY(QString cardLabel READ cardLabel WRITE setCardLabel NOTIFY cardLabelChanged) // Since 1.2.0
 
 public:
     explicit QOfonoExtSimInfo(QObject* parent = Q_NULLPTR);
@@ -38,8 +39,10 @@ public:
     QString cardIdentifier() const;
     QString subscriberIdentity() const;
     QString serviceProviderName() const;
+    QString cardLabel() const; // Since 1.2.0
 
     void setModemPath(QString);
+    void setCardLabel(QString); // Since 1.2.0
 
 Q_SIGNALS:
     void validChanged(bool value);
@@ -47,6 +50,7 @@ Q_SIGNALS:
     void cardIdentifierChanged(QString value);
     void subscriberIdentityChanged(QString value);
     void serviceProviderNameChanged(QString value);
+    void cardLabelChanged(QString value); // Since 1.2.0
 
 private:
     class Private;

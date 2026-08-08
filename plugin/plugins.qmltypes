@@ -206,17 +206,17 @@ Module {
         Method {
             name: "imeiAt"
             type: "string"
-            Parameter { name: "aIndex"; type: "int" }
+            Parameter { type: "int" }
         }
         Method {
             name: "imeisvAt"
             type: "string"
-            Parameter { name: "aIndex"; type: "int" }
+            Parameter { type: "int" }
         }
         Method {
             name: "simPresentAt"
             type: "bool"
-            Parameter { name: "aIndex"; type: "int" }
+            Parameter { type: "int" }
         }
     }
     Component {
@@ -229,6 +229,7 @@ Module {
         Property { name: "cardIdentifier"; type: "string"; isReadonly: true }
         Property { name: "subscriberIdentity"; type: "string"; isReadonly: true }
         Property { name: "serviceProviderName"; type: "string"; isReadonly: true }
+        Property { name: "cardLabel"; type: "string" }
         Signal {
             name: "validChanged"
             Parameter { name: "value"; type: "bool" }
@@ -247,6 +248,10 @@ Module {
         }
         Signal {
             name: "serviceProviderNameChanged"
+            Parameter { name: "value"; type: "string" }
+        }
+        Signal {
+            name: "cardLabelChanged"
             Parameter { name: "value"; type: "string" }
         }
     }
