@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -24,9 +25,13 @@
 
 #include <QtQml>
 
-void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri, int aMajor, int aMinor)
+/* static */
+void
+QOfonoExtDeclarativePlugin::registerTypes(
+    const char* aUri,
+    int aMajor,
+    int aMinor)
 {
-    Q_ASSERT(QLatin1String(aUri) == "org.nemomobile.ofono");
     qmlRegisterType<QOfonoExtModemManager>(aUri, aMajor, aMinor, "OfonoModemManager");
     qmlRegisterType<QOfonoExtModemListModel>(aUri, aMajor, aMinor, "OfonoModemListModel");
     qmlRegisterType<QOfonoExtSimInfo>(aUri, aMajor, aMinor, "OfonoSimInfo");
@@ -35,7 +40,10 @@ void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri, int aMajor, int
     qmlRegisterType<QOfonoExtCell>(aUri, aMajor, aMinor, "OfonoExtCell");
 }
 
-void QOfonoExtDeclarativePlugin::registerTypes(const char* aUri)
+void
+QOfonoExtDeclarativePlugin::registerTypes(
+    const char* aUri)
 {
+    Q_ASSERT(QLatin1String(aUri) == "org.nemomobile.ofono");
     registerTypes(aUri, 1, 0);
 }

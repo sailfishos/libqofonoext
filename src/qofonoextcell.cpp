@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2023 Slava Monich <slava@monich.com>
 ** Copyright (C) 2015-2021 Jolla Ltd.
 **
@@ -16,6 +17,8 @@
 #include "qofonoextcell.h"
 #include "qofonoextcellinfo.h"
 #include "qofonoext_p.h"
+
+#include <stdint.h>
 
 namespace {
     const QString kTypeGsm("gsm");
@@ -42,14 +45,15 @@ namespace {
 // It's easier to write these proxies by hand.
 // ==========================================================================
 
-class QOfonoExtCellProxy: public QDBusAbstractInterface
+class QOfonoExtCellProxy :
+    public QDBusAbstractInterface
 {
     Q_OBJECT
 
 public:
-    QOfonoExtCellProxy(const QString &aPath, QObject *aParent)
-        : QDBusAbstractInterface(OFONO_SERVICE, aPath,
-                                 "org.nemomobile.ofono.Cell", OFONO_BUS, aParent) {}
+    QOfonoExtCellProxy(const QString& aPath, QObject* aParent) :
+        QDBusAbstractInterface(OFONO_SERVICE, aPath, "org.nemomobile.ofono.Cell",
+            OFONO_BUS, aParent) {}
 
 public Q_SLOTS: // METHODS
     QDBusPendingCall GetAllAsync()
@@ -58,8 +62,8 @@ public Q_SLOTS: // METHODS
         { return call(kMethodGetAll); }
 
 Q_SIGNALS: // SIGNALS
-    void PropertyChanged(const QString &aName, const QDBusVariant &aValue);
-    void RegisteredChanged(bool aRegistered);
+    void PropertyChanged(const QString&, const QDBusVariant&);
+    void RegisteredChanged(bool);
     void Removed();
 };
 
@@ -67,7 +71,8 @@ Q_SIGNALS: // SIGNALS
 // QOfonoExtCell::Private
 // ==========================================================================
 
-class QOfonoExtCell::Private : public QOfonoExtCellProxy
+class QOfonoExtCell::Private :
+    public QOfonoExtCellProxy
 {
     Q_OBJECT
 
@@ -80,9 +85,8 @@ public:
     };
 
     struct PropertyDesc {
-        QString name;
+        const QString name;
         void (QOfonoExtCell::*signal)();
-        void (*propertyChanged)(QOfonoExtCell*, QString, int);
     };
 
     static const PropertyDesc Properties[PropertyCount];
@@ -94,31 +98,29 @@ public:
         QVariantMap>  // 3. properties
         GetAllReply;
 
-    Private(const QString &aPath, QOfonoExtCell *aParent);
+    Private(const QString&, QOfonoExtCell*);
     void getAllSyncInit();
 
-    static int valueInt(Private* aThis, Property aProperty);
-    static Type typeFromString(const QString &aType);
-    static Property propertyFromString(const QString &aProperty);
-    static int getRssiDbm(int aSignalStrength);
-    static int inRange(int aValue, int aRangeMin, int aRangeMax);
+    static int valueInt(Private*, Property);
+    static Type typeFromString(const QString&);
+    static Property propertyFromString(const QString&);
+    static int getRssiDbm(int);
+    static int inRange(int value, int min, int max);
+
+    void updateAllAsync();
 
 private:
     QOfonoExtCell* cell();
     void getAllAsync();
     bool pathValid();
     bool updateSignalLevelDbm();
-    void handleGetAllReply(GetAllReply aReply, bool aEmitSignals);
+    void handleGetAllReply(GetAllReply, bool);
     void invalidateValues();
-    static void propertyChanged(QOfonoExtCell* aCell, QString aName, int aValue);
 
-public Q_SLOTS:
-    void updateAllAsync();
-
-private Q_SLOTS:
-    void onGetAllFinished(QDBusPendingCallWatcher* aWatcher);
-    void onPropertyChanged(const QString &aName, const QDBusVariant &aValue);
-    void onRegisteredChanged(bool aRegistered);
+private: // SLOTS
+    void onGetAllFinished(QDBusPendingCallWatcher*);
+    void onPropertyChanged(const QString&, const QDBusVariant&);
+    void onRegisteredChanged(bool);
 
 public:
     bool iValid;
@@ -133,17 +135,15 @@ private:
     QSharedPointer<QOfonoExtCellInfo> iCellInfo;
 };
 
-void QOfonoExtCell::Private::propertyChanged(QOfonoExtCell* aCell, QString aName, int aValue)
-{
-    Q_EMIT aCell->propertyChanged(aName, aValue);
-}
-
-const QOfonoExtCell::Private::PropertyDesc QOfonoExtCell::Private::Properties[] = {
-    #define PropertyDesc_(x) {QString(#x), &QOfonoExtCell::x##Changed, propertyChanged},
+const QOfonoExtCell::Private::PropertyDesc
+QOfonoExtCell::Private::Properties[] = {
+    #define PropertyDesc_(x) {QStringLiteral(#x), &QOfonoExtCell::x##Changed},
     CELL_PROPERTIES(PropertyDesc_)
 };
 
-QOfonoExtCell::Private::Private(const QString &aPath, QOfonoExtCell *aParent) :
+QOfonoExtCell::Private::Private(
+    const QString& aPath,
+    QOfonoExtCell* aParent) :
     QOfonoExtCellProxy(aPath, aParent),
     iValid(false),
     iRegistered(false),
@@ -155,28 +155,27 @@ QOfonoExtCell::Private::Private(const QString &aPath, QOfonoExtCell *aParent) :
     // Extract modem path from the cell path, e.g. "/ril_0/cell_0" => "/ril_0"
     iCellInfo = QOfonoExtCellInfo::instance(aPath.left(aPath.lastIndexOf('/')));
     invalidateValues();
-    connect(this, SIGNAL(Removed()),
-        aParent, SIGNAL(removed()));
-    connect(this,
-        SIGNAL(PropertyChanged(QString,QDBusVariant)),
-        SLOT(onPropertyChanged(QString,QDBusVariant)));
-    connect(this,
-        SIGNAL(RegisteredChanged(bool)),
-        SLOT(onRegisteredChanged(bool)));
-    connect(iCellInfo.data(),
-        SIGNAL(cellsChanged()),
-        SLOT(updateAllAsync()));
-    connect(iCellInfo.data(),
-        SIGNAL(validChanged()),
-        SLOT(updateAllAsync()));
+    connect(this, &QOfonoExtCellProxy::Removed,
+        aParent, &QOfonoExtCell::removed);
+    connect(this, &QOfonoExtCellProxy::PropertyChanged,
+        this, &Private::onPropertyChanged);
+    connect(this, &QOfonoExtCellProxy::RegisteredChanged,
+        this, &Private::onRegisteredChanged);
+    connect(iCellInfo.data(), &QOfonoExtCellInfo::cellsChanged,
+        this, &Private::updateAllAsync);
+    connect(iCellInfo.data(), &QOfonoExtCellInfo::validChanged,
+        this, &Private::updateAllAsync);
 }
 
-inline QOfonoExtCell* QOfonoExtCell::Private::cell()
+inline
+QOfonoExtCell* QOfonoExtCell::Private::cell()
 {
     return qobject_cast<QOfonoExtCell*>(parent());
 }
 
-QOfonoExtCell::Type QOfonoExtCell::Private::typeFromString(const QString &aType)
+QOfonoExtCell::Type
+QOfonoExtCell::Private::typeFromString(
+    const QString& aType)
 {
     return (aType == kTypeGsm) ? GSM :
            (aType == kTypeLte) ? LTE :
@@ -185,9 +184,11 @@ QOfonoExtCell::Type QOfonoExtCell::Private::typeFromString(const QString &aType)
            UNKNOWN;
 }
 
-QOfonoExtCell::Private::Property QOfonoExtCell::Private::propertyFromString(const QString &aProperty)
+QOfonoExtCell::Private::Property
+QOfonoExtCell::Private::propertyFromString(
+    const QString& aProperty)
 {
-    for (int i=PropertyUnknown+1; i<PropertyCount; i++) {
+    for (int i = PropertyUnknown + 1; i < PropertyCount; i++) {
         if (Properties[i].name == aProperty) {
             return (Property)i;
         }
@@ -195,17 +196,22 @@ QOfonoExtCell::Private::Property QOfonoExtCell::Private::propertyFromString(cons
     return PropertyUnknown;
 }
 
-int QOfonoExtCell::Private::valueInt(Private* aThis, QOfonoExtCell::Private::Property aProperty)
+int
+QOfonoExtCell::Private::valueInt(
+    Private* aThis,
+    Property aProperty)
 {
     return aThis ? aThis->iProperties[aProperty] : QOFONOEXT_INVALID_VALUE;
 }
 
-bool QOfonoExtCell::Private::pathValid()
+bool
+QOfonoExtCell::Private::pathValid()
 {
     return iCellInfo->valid() && iCellInfo->cells().contains(path());
 }
 
-void QOfonoExtCell::Private::updateAllAsync()
+void
+QOfonoExtCell::Private::updateAllAsync()
 {
     if (pathValid()) {
         if (!iValid && !iPendingGetAll) {
@@ -222,18 +228,24 @@ void QOfonoExtCell::Private::updateAllAsync()
     }
 }
 
-int QOfonoExtCell::Private::getRssiDbm(int aValue)
+int
+QOfonoExtCell::Private::getRssiDbm(int aValue)
 {
     // Range for RSSI in ASU (0-31, 99) as defined in TS 27.007 8.69
     return (aValue < 0 || aValue > 31) ? QOFONOEXT_INVALID_VALUE : (-113 + (2 * aValue));
 }
 
-int QOfonoExtCell::Private::inRange(int aValue, int aMin, int aMax)
+int
+QOfonoExtCell::Private::inRange(
+    int aValue,
+    int aMin,
+    int aMax)
 {
     return (aValue < aMin || aValue > aMax) ? QOFONOEXT_INVALID_VALUE : aValue;
 }
 
-void QOfonoExtCell::Private::getAllSyncInit()
+void
+QOfonoExtCell::Private::getAllSyncInit()
 {
     delete iPendingGetAll;
     iPendingGetAll = NULL;
@@ -244,16 +256,18 @@ void QOfonoExtCell::Private::getAllSyncInit()
     }
 }
 
-void QOfonoExtCell::Private::getAllAsync()
+void
+QOfonoExtCell::Private::getAllAsync()
 {
     delete iPendingGetAll;
     iPendingGetAll = new QDBusPendingCallWatcher(GetAllAsync(), this);
-    connect(iPendingGetAll,
-        SIGNAL(finished(QDBusPendingCallWatcher*)),
-        SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
+    connect(iPendingGetAll, &QDBusPendingCallWatcher::finished,
+        this, &Private::onGetAllFinished);
 }
 
-void QOfonoExtCell::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatcher)
+void
+QOfonoExtCell::Private::onGetAllFinished(
+    QDBusPendingCallWatcher* aWatcher)
 {
     iPendingGetAll = Q_NULLPTR;
     if (aWatcher->isError()) {
@@ -269,7 +283,10 @@ void QOfonoExtCell::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatcher)
     aWatcher->deleteLater();
 }
 
-void QOfonoExtCell::Private::handleGetAllReply(GetAllReply aReply, bool aEmitSignals)
+void
+QOfonoExtCell::Private::handleGetAllReply(
+    GetAllReply aReply,
+    bool aEmitSignals)
 {
     const Type prevType = iType;
     const bool wasRegistered = iRegistered;
@@ -315,10 +332,11 @@ void QOfonoExtCell::Private::handleGetAllReply(GetAllReply aReply, bool aEmitSig
     // Emit signals
     if (aEmitSignals) {
         QOfonoExtCell* parent = cell();
-        for (int i=0; i<PropertyCount; i++) {
+
+        for (int i = 0; i < PropertyCount; i++) {
             if (iProperties[i] != prevProps[i]) {
                 (parent->*(Properties[i].signal))();
-                Properties[i].propertyChanged(parent, Properties[i].name, iProperties[i]);
+                Q_EMIT parent->propertyChanged(Properties[i].name, iProperties[i]);
             }
         }
 
@@ -341,14 +359,18 @@ void QOfonoExtCell::Private::handleGetAllReply(GetAllReply aReply, bool aEmitSig
     }
 }
 
-void QOfonoExtCell::Private::invalidateValues()
+void
+QOfonoExtCell::Private::invalidateValues()
 {
     #define _Init(x) iProperties[Property_##x] = QOFONOEXT_INVALID_VALUE;
     CELL_PROPERTIES(_Init)
     iNci = INT64_MAX;
 }
 
-void QOfonoExtCell::Private::onPropertyChanged(const QString &aName, const QDBusVariant &aValue)
+void
+QOfonoExtCell::Private::onPropertyChanged(
+    const QString& aName,
+    const QDBusVariant& aValue)
 {
     bool ok = false;
     int intValue = aValue.variant().toInt(&ok);
@@ -378,13 +400,16 @@ void QOfonoExtCell::Private::onPropertyChanged(const QString &aName, const QDBus
     }
 }
 
-void QOfonoExtCell::Private::onRegisteredChanged(bool aRegistered)
+void
+QOfonoExtCell::Private::onRegisteredChanged(
+    bool aRegistered)
 {
     iRegistered = aRegistered;
     Q_EMIT cell()->registeredChanged();
 }
 
-bool QOfonoExtCell::Private::updateSignalLevelDbm()
+bool
+QOfonoExtCell::Private::updateSignalLevelDbm()
 {
     int signalLevelDbm = QOFONOEXT_INVALID_VALUE;
 
@@ -417,19 +442,22 @@ bool QOfonoExtCell::Private::updateSignalLevelDbm()
 // QOfonoExtCell
 // ==========================================================================
 
-QOfonoExtCell::QOfonoExtCell(QObject* aParent) :
+QOfonoExtCell::QOfonoExtCell(
+    QObject* aParent) :
     QObject(aParent),
     iPrivate(Q_NULLPTR)
-{
-}
+{}
 
-QOfonoExtCell::QOfonoExtCell(QString aPath) :
+QOfonoExtCell::QOfonoExtCell(
+    QString aPath) :
     iPrivate(new Private(aPath, this))
 {
     iPrivate->updateAllAsync();
 }
 
-QOfonoExtCell::QOfonoExtCell(QString aPath, bool aMayBlock) : // Since 1.0.27
+QOfonoExtCell::QOfonoExtCell(
+    QString aPath,
+    bool aMayBlock) : // Since 1.0.27
     iPrivate(new Private(aPath, this))
 {
     if (aMayBlock) {
@@ -440,35 +468,41 @@ QOfonoExtCell::QOfonoExtCell(QString aPath, bool aMayBlock) : // Since 1.0.27
 }
 
 QOfonoExtCell::~QOfonoExtCell()
-{
-}
+{}
 
-bool QOfonoExtCell::valid() const
+bool
+QOfonoExtCell::valid() const
 {
     return iPrivate && iPrivate->iValid;
 }
 
-QOfonoExtCell::Type QOfonoExtCell::type() const
+QOfonoExtCell::Type
+QOfonoExtCell::type() const
 {
     return iPrivate ? iPrivate->iType : UNKNOWN;
 }
 
-bool QOfonoExtCell::registered() const
+bool
+QOfonoExtCell::registered() const
 {
     return iPrivate && iPrivate->iRegistered;
 }
 
-QString QOfonoExtCell::path() const
+QString
+QOfonoExtCell::path() const
 {
     return iPrivate ? iPrivate->path() : QString();
 }
 
-void QOfonoExtCell::setPath(QString aPath)
+void
+QOfonoExtCell::setPath(
+    QString aPath)
 {
     if (path() != aPath) {
         const bool wasValid = valid();
         const bool wasRegistered = registered();
         const Type prevType = type();
+
         delete iPrivate;
         iPrivate = new Private(aPath, this);
         iPrivate->updateAllAsync();
@@ -485,7 +519,8 @@ void QOfonoExtCell::setPath(QString aPath)
     }
 }
 
-int QOfonoExtCell::signalLevelDbm() const
+int
+QOfonoExtCell::signalLevelDbm() const
 {
     return iPrivate ? iPrivate->iSignalLevelDbm : QOFONOEXT_INVALID_VALUE;
 }
@@ -496,9 +531,11 @@ int QOfonoExtCell::signalLevelDbm() const
     }
 CELL_PROPERTIES(PropertyGet_)
 
-QString QOfonoExtCell::nciString() const
+QString
+QOfonoExtCell::nciString() const
 {
-    qint64 value = iPrivate ? iPrivate->iNci : INT64_MAX;
+    const qint64 value = iPrivate ? iPrivate->iNci : INT64_MAX;
+
     if (value != INT64_MAX) {
         return QString::number(value);
     }

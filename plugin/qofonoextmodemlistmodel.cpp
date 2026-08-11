@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -15,7 +16,8 @@
 
 #include "qofonoextmodemlistmodel.h"
 
-QOfonoExtModemListModel::QOfonoExtModemListModel(QObject* aParent) :
+QOfonoExtModemListModel::QOfonoExtModemListModel(
+    QObject* aParent) :
     QAbstractListModel(aParent),
     iModemManager(QOfonoExtModemManager::instance()),
     iAvailableModems(iModemManager->availableModems()),
@@ -23,43 +25,40 @@ QOfonoExtModemListModel::QOfonoExtModemListModel(QObject* aParent) :
     iDefaultVoiceModem(iModemManager->defaultVoiceModem()),
     iDefaultDataModem(iModemManager->defaultDataModem())
 {
-    connect(iModemManager.data(),
-        SIGNAL(validChanged(bool)),
-        SLOT(onValidChanged(bool)));
-    connect(iModemManager.data(),
-        SIGNAL(availableModemsChanged(QStringList)),
-        SLOT(onAvailableModemsChanged(QStringList)));
-    connect(iModemManager.data(),
-        SIGNAL(enabledModemsChanged(QStringList)),
-        SLOT(onEnabledModemsChanged(QStringList)));
-    connect(iModemManager.data(),
-        SIGNAL(defaultDataModemChanged(QString)),
-        SLOT(onDefaultDataModemChanged(QString)));
-    connect(iModemManager.data(),
-        SIGNAL(defaultVoiceModemChanged(QString)),
-        SLOT(onDefaultVoiceModemChanged(QString)));
-    connect(iModemManager.data(),
-        SIGNAL(presentSimChanged(int,bool)),
-        SLOT(onPresentSimChanged(int,bool)));
-    connect(iModemManager.data(),
-        SIGNAL(imeiCodesChanged(QStringList)),
-        SLOT(onImeiCodesChanged(QStringList)));
-    connect(iModemManager.data(),
-        SIGNAL(imeisvCodesChanged(QStringList)),
-        SLOT(onImeisvCodesChanged(QStringList)));
+    QOfonoExtModemManager* mm = iModemManager.data();
+
+    connect(mm, &QOfonoExtModemManager::validChanged,
+        this, &QOfonoExtModemListModel::onValidChanged);
+    connect(mm, &QOfonoExtModemManager::availableModemsChanged,
+        this, &QOfonoExtModemListModel::onAvailableModemsChanged);
+    connect(mm, &QOfonoExtModemManager::enabledModemsChanged,
+        this, &QOfonoExtModemListModel::onEnabledModemsChanged);
+    connect(mm, &QOfonoExtModemManager::defaultDataModemChanged,
+        this, &QOfonoExtModemListModel::onDefaultDataModemChanged);
+    connect(mm, &QOfonoExtModemManager::defaultVoiceModemChanged,
+        this, &QOfonoExtModemListModel::onDefaultVoiceModemChanged);
+    connect(mm, &QOfonoExtModemManager::presentSimChanged,
+        this, &QOfonoExtModemListModel::onPresentSimChanged);
+    connect(mm, &QOfonoExtModemManager::imeiCodesChanged,
+        this, &QOfonoExtModemListModel::onImeiCodesChanged);
+    connect(mm, &QOfonoExtModemManager::imeisvCodesChanged,
+        this, &QOfonoExtModemListModel::onImeisvCodesChanged);
 }
 
-bool QOfonoExtModemListModel::valid() const
+bool
+QOfonoExtModemListModel::valid() const
 {
     return iModemManager->valid();
 }
 
-int QOfonoExtModemListModel::count() const
+int
+QOfonoExtModemListModel::count() const
 {
     return iAvailableModems.count();
 }
 
-QHash<int,QByteArray> QOfonoExtModemListModel::roleNames() const
+QHash<int,QByteArray>
+QOfonoExtModemListModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles[PathRole]         = "path";
@@ -72,14 +71,20 @@ QHash<int,QByteArray> QOfonoExtModemListModel::roleNames() const
     return roles;
 }
 
-int QOfonoExtModemListModel::rowCount(const QModelIndex& aParent) const
+int
+QOfonoExtModemListModel::rowCount(
+    const QModelIndex&) const
 {
     return iAvailableModems.count();
 }
 
-QVariant QOfonoExtModemListModel::data(const QModelIndex& aIndex, int aRole) const
+QVariant
+QOfonoExtModemListModel::data(
+    const QModelIndex& aIndex,
+    int aRole) const
 {
     const int row = aIndex.row();
+
     if (row >= 0 && row < iAvailableModems.count()) {
         switch (aRole) {
         case PathRole:         return iAvailableModems.at(row);
@@ -95,13 +100,19 @@ QVariant QOfonoExtModemListModel::data(const QModelIndex& aIndex, int aRole) con
     return QVariant();
 }
 
-bool QOfonoExtModemListModel::setData(const QModelIndex& aIndex, const QVariant& aValue, int aRole)
+bool
+QOfonoExtModemListModel::setData(
+    const QModelIndex& aIndex,
+    const QVariant& aValue,
+    int aRole)
 {
     const int row = aIndex.row();
+
     if (row >= 0 && row < iAvailableModems.count() && aRole == EnabledRole) {
         const bool enabled = aValue.toBool();
         const QString& path(iAvailableModems.at(row));
         const int index = iEnabledModems.indexOf(path);
+
         if (enabled != (index >= 0)) {
             QStringList enabledModems = iEnabledModems;
             if (enabled) {
@@ -116,7 +127,9 @@ bool QOfonoExtModemListModel::setData(const QModelIndex& aIndex, const QVariant&
     return false;
 }
 
-void QOfonoExtModemListModel::onValidChanged(bool aValid)
+void
+QOfonoExtModemListModel::onValidChanged(
+    bool aValid)
 {
     if (aValid) {
         beginResetModel();
@@ -125,9 +138,12 @@ void QOfonoExtModemListModel::onValidChanged(bool aValid)
     Q_EMIT validChanged(aValid);
 }
 
-void QOfonoExtModemListModel::onAvailableModemsChanged(QStringList aModems)
+void
+QOfonoExtModemListModel::onAvailableModemsChanged(
+    const QStringList& aModems)
 {
     const bool countHasChanged = iAvailableModems.count() != aModems.count();
+
     beginResetModel();
     iAvailableModems = aModems;
     endResetModel();
@@ -136,77 +152,109 @@ void QOfonoExtModemListModel::onAvailableModemsChanged(QStringList aModems)
     }
 }
 
-void QOfonoExtModemListModel::onEnabledModemsChanged(QStringList aModems)
+void
+QOfonoExtModemListModel::onEnabledModemsChanged(
+    const QStringList& aModems)
 {
     if (iEnabledModems != aModems) {
-        QStringList prevModems = iEnabledModems;
-        iEnabledModems = aModems;
+        const QStringList prevModems(iEnabledModems);
         const int n = iAvailableModems.count();
         QVector<int> role;
+
         role.append(EnabledRole);
-        for (int i=0; i<n; i++) {
+        iEnabledModems = aModems;
+        for (int i = 0; i < n; i++) {
             const QString& path(iAvailableModems.at(i));
+
             if (prevModems.contains(path) != aModems.contains(path)) {
                 QModelIndex index(createIndex(i, 0));
+
                 Q_EMIT dataChanged(index, index, role);
             }
         }
     }
 }
 
-void QOfonoExtModemListModel::onDefaultDataModemChanged(QString aModemPath)
+void
+QOfonoExtModemListModel::onDefaultDataModemChanged(
+    QString aModemPath)
 {
     const int prevIndex = iAvailableModems.indexOf(iDefaultDataModem);
+
     iDefaultDataModem = aModemPath;
     defaultModemChanged(DefaultDataRole, prevIndex, iAvailableModems.indexOf(aModemPath));
 }
 
-void QOfonoExtModemListModel::onDefaultVoiceModemChanged(QString aModemPath)
+void
+QOfonoExtModemListModel::onDefaultVoiceModemChanged(
+    QString aModemPath)
 {
     const int prevIndex = iAvailableModems.indexOf(iDefaultVoiceModem);
+
     iDefaultVoiceModem = aModemPath;
     defaultModemChanged(DefaultVoiceRole, prevIndex, iAvailableModems.indexOf(aModemPath));
 }
 
-void QOfonoExtModemListModel::onPresentSimChanged(int aIndex, bool aPresent)
+void
+QOfonoExtModemListModel::onPresentSimChanged(
+    int aIndex,
+    bool aPresent)
 {
+    const QModelIndex index(createIndex(aIndex, 0));
     QVector<int> role;
+
     role.append(SimPresentRole);
-    QModelIndex index(createIndex(aIndex, 0));
     Q_EMIT dataChanged(index, index, role);
 }
 
-void QOfonoExtModemListModel::defaultModemChanged(Role aRole, int aPrevRow, int aNewRow)
+void
+QOfonoExtModemListModel::defaultModemChanged(
+    Role aRole,
+    int aPrevRow,
+    int aNewRow)
 {
     if (aPrevRow != aNewRow) {
         QVector<int> role;
+
         role.append(aRole);
         if (aPrevRow >= 0) {
             QModelIndex index(createIndex(aPrevRow, 0));
+
             Q_EMIT dataChanged(index, index, role);
         }
         if (aNewRow >= 0) {
             QModelIndex index(createIndex(aNewRow, 0));
+
             Q_EMIT dataChanged(index, index, role);
         }
     }
 }
 
-void QOfonoExtModemListModel::onImeiCodesChanged(QStringList aList)
+void
+QOfonoExtModemListModel::onImeiCodesChanged(
+    const QStringList& aList)
 {
-    QStringList prev = iImeiList;
+    const QStringList prev(iImeiList);
+
     iImeiList = aList;
     roleChanged(IMEIRole, prev, aList);
 }
 
-void QOfonoExtModemListModel::onImeisvCodesChanged(QStringList aList)
+void
+QOfonoExtModemListModel::onImeisvCodesChanged(
+    const QStringList& aList)
 {
-    QStringList prev = iImeisvList;
+    const QStringList prev(iImeisvList);
+
     iImeisvList = aList;
     roleChanged(IMEISVRole, prev, aList);
 }
 
-void QOfonoExtModemListModel::roleChanged(Role aRole, QStringList aPrevList, QStringList aNewList)
+void
+QOfonoExtModemListModel::roleChanged(
+    Role aRole,
+    const QStringList& aPrevList,
+    const QStringList& aNewList)
 {
     // This is slightly paranoid... All these 3 counts should be the same
     const int n1 = iAvailableModems.count();
@@ -214,10 +262,12 @@ void QOfonoExtModemListModel::roleChanged(Role aRole, QStringList aPrevList, QSt
     const int n3 = aNewList.count();
     const int n = qMin(n1, qMin(n2, n3));
     QVector<int> role;
+
     role.append(aRole);
-    for (int i=0; i<n; i++) {
+    for (int i = 0; i < n; i++) {
         if (aPrevList.at(i) != aNewList.at(i)) {
-            QModelIndex index(createIndex(i, 0));
+            const QModelIndex index(createIndex(i, 0));
+
             Q_EMIT dataChanged(index, index, role);
         }
     }

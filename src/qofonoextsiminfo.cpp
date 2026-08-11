@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -26,7 +27,8 @@
 // It's easier to write these proxies by hand.
 // ==========================================================================
 
-class QOfonoExtSimInfoProxy: public QDBusAbstractInterface
+class QOfonoExtSimInfoProxy:
+    public QDBusAbstractInterface
 {
     Q_OBJECT
 
@@ -43,9 +45,9 @@ public Q_SLOTS: // METHODS
         { return asyncCall("GetAll"); }
 
 Q_SIGNALS: // SIGNALS
-    void CardIdentifierChanged(QString aIccid);
-    void ServiceProviderNameChanged(QString aSpn);
-    void SubscriberIdentityChanged(QString aImsi);
+    void CardIdentifierChanged(QString);
+    void ServiceProviderNameChanged(QString);
+    void SubscriberIdentityChanged(QString);
 };
 
 const QString QOfonoExtSimInfoProxy::INTERFACE("org.nemomobile.ofono.SimInfo");
@@ -54,12 +56,12 @@ const QString QOfonoExtSimInfoProxy::INTERFACE("org.nemomobile.ofono.SimInfo");
 // QOfonoExtSimInfo::Private
 // ==========================================================================
 
-class QOfonoExtSimInfo::Private : public QObject
+class QOfonoExtSimInfo::Private :
+    public QObject
 {
     Q_OBJECT
 
 public:
-    QOfonoExtSimInfo* iParent;
     QOfonoExtSimInfoProxy* iProxy;
     QSharedPointer<QOfonoModem> iModem;
     bool iValid;
@@ -68,35 +70,44 @@ public:
     QString iSubscriberIdentity;
     QString iServiceProviderName;
 
-    Private(QOfonoExtSimInfo* aParent);
+    Private(QOfonoExtSimInfo*);
 
+    QOfonoExtSimInfo* parentObject() const;
     QString modemPath() const;
-    void setModemPath(QString aPath);
+    void setModemPath(const QString&);
     void invalidate();
     void getAll();
 
-private Q_SLOTS:
+private: // SLOTS
     void checkInterfacePresence();
-    void onGetAllFinished(QDBusPendingCallWatcher* aWatcher);
-    void onCardIdentifierChanged(QString aCardIdentifier);
-    void onSubscriberIdentityChanged(QString aSubscriberIdentity);
-    void onServiceProviderNameChanged(QString aServiceProviderName);
+    void onGetAllFinished(QDBusPendingCallWatcher*);
+    void onCardIdentifierChanged(const QString&);
+    void onSubscriberIdentityChanged(const QString&);
+    void onServiceProviderNameChanged(const QString&);
 };
 
-QOfonoExtSimInfo::Private::Private(QOfonoExtSimInfo* aParent) :
+QOfonoExtSimInfo::Private::Private(
+    QOfonoExtSimInfo* aParent) :
     QObject(aParent),
-    iParent(aParent),
-    iProxy(NULL),
+    iProxy(Q_NULLPTR),
     iValid(false)
+{}
+
+QOfonoExtSimInfo*
+QOfonoExtSimInfo::Private::parentObject() const
 {
+    return qobject_cast<QOfonoExtSimInfo*>(parent());
 }
 
-QString QOfonoExtSimInfo::Private::modemPath() const
+QString
+QOfonoExtSimInfo::Private::modemPath() const
 {
     return iModem.isNull() ? QString() : iModem->objectPath();
 }
 
-void QOfonoExtSimInfo::Private::setModemPath(QString aPath)
+void
+QOfonoExtSimInfo::Private::setModemPath(
+    const QString& aPath)
 {
     if (aPath != modemPath()) {
         invalidate();
@@ -105,34 +116,30 @@ void QOfonoExtSimInfo::Private::setModemPath(QString aPath)
         } else {
             if (iModem) iModem->disconnect(this);
             iModem = QOfonoModem::instance(aPath);
-            connect(iModem.data(),
-                SIGNAL(validChanged(bool)),
-                SLOT(checkInterfacePresence()));
-            connect(iModem.data(),
-                SIGNAL(interfacesChanged(QStringList)),
-                SLOT(checkInterfacePresence()));
+            connect(iModem.data(), &QOfonoModem::validChanged,
+                this, &Private::checkInterfacePresence);
+            connect(iModem.data(), &QOfonoModem::interfacesChanged,
+                this, &Private::checkInterfacePresence);
             checkInterfacePresence();
         }
-        iParent->modemPathChanged(modemPath());
+        Q_EMIT parentObject()->modemPathChanged(modemPath());
     }
 }
 
-void QOfonoExtSimInfo::Private::checkInterfacePresence()
+void
+QOfonoExtSimInfo::Private::checkInterfacePresence()
 {
     if (iModem && iModem->isValid() &&
         iModem->interfaces().contains(QOfonoExtSimInfoProxy::INTERFACE)) {
         if (!iProxy) {
             iProxy = new QOfonoExtSimInfoProxy(iModem->objectPath(), this);
             if (iProxy->isValid()) {
-                connect(iProxy,
-                    SIGNAL(CardIdentifierChanged(QString)),
-                    SLOT(onCardIdentifierChanged(QString)));
-                connect(iProxy,
-                    SIGNAL(SubscriberIdentityChanged(QString)),
-                    SLOT(onSubscriberIdentityChanged(QString)));
-                connect(iProxy,
-                    SIGNAL(ServiceProviderNameChanged(QString)),
-                    SLOT(onServiceProviderNameChanged(QString)));
+                connect(iProxy, &QOfonoExtSimInfoProxy::CardIdentifierChanged,
+                    this, &Private::onCardIdentifierChanged);
+                connect(iProxy, &QOfonoExtSimInfoProxy::SubscriberIdentityChanged,
+                    this, &Private::onSubscriberIdentityChanged);
+                connect(iProxy, &QOfonoExtSimInfoProxy::ServiceProviderNameChanged,
+                    this, &Private::onServiceProviderNameChanged);
                 getAll();
             } else {
                 invalidate();
@@ -143,32 +150,36 @@ void QOfonoExtSimInfo::Private::checkInterfacePresence()
     }
 }
 
-void QOfonoExtSimInfo::Private::invalidate()
+void
+QOfonoExtSimInfo::Private::invalidate()
 {
     if (iProxy) {
         delete iProxy;
-        iProxy = NULL;
+        iProxy = Q_NULLPTR;
     }
     if (iValid) {
         iValid = false;
-        Q_EMIT iParent->validChanged(false);
+        Q_EMIT parentObject()->validChanged(false);
     }
 }
 
-void QOfonoExtSimInfo::Private::getAll()
+void
+QOfonoExtSimInfo::Private::getAll()
 {
     connect(new QDBusPendingCallWatcher(iProxy->GetAll(), iProxy),
-        SIGNAL(finished(QDBusPendingCallWatcher*)),
-        SLOT(onGetAllFinished(QDBusPendingCallWatcher*)));
+        &QDBusPendingCallWatcher::finished, this, &Private::onGetAllFinished);
 }
 
-void QOfonoExtSimInfo::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatcher)
+void
+QOfonoExtSimInfo::Private::onGetAllFinished(
+    QDBusPendingCallWatcher* aWatcher)
 {
     QDBusPendingReply<int,      // InterfaceVersion
         QString,                // CardIdentifier
         QString,                // SubscriberIdentity
         QString>                // ServiceProviderName
         reply(*aWatcher);
+
     if (reply.isError()) {
         // Repeat the call on timeout
         qWarning() << reply.error();
@@ -176,50 +187,58 @@ void QOfonoExtSimInfo::Private::onGetAllFinished(QDBusPendingCallWatcher* aWatch
             getAll();
         }
     } else {
-        QString iccid = reply.argumentAt<1>();
+        QOfonoExtSimInfo* obj = parentObject();
+        const QString iccid(reply.argumentAt<1>());
+        const QString imsi(reply.argumentAt<2>());
+        const QString spn(reply.argumentAt<3>());
+
         if (iCardIdentifier != iccid) {
             iCardIdentifier = iccid;
-            Q_EMIT iParent->cardIdentifierChanged(iccid);
+            Q_EMIT obj->cardIdentifierChanged(iccid);
         }
-        QString imsi = reply.argumentAt<2>();
         if (iSubscriberIdentity != imsi) {
             iSubscriberIdentity = imsi;
-            Q_EMIT iParent->subscriberIdentityChanged(imsi);
+            Q_EMIT obj->subscriberIdentityChanged(imsi);
         }
-        QString spn = reply.argumentAt<3>();
         if (iServiceProviderName != spn) {
             iServiceProviderName = spn;
-            Q_EMIT iParent->serviceProviderNameChanged(spn);
+            Q_EMIT obj->serviceProviderNameChanged(spn);
         }
         if (!iValid) {
             iValid = true;
-            Q_EMIT iParent->validChanged(iValid);
+            Q_EMIT obj->validChanged(iValid);
         }
     }
     aWatcher->deleteLater();
 }
 
-void QOfonoExtSimInfo::Private::onCardIdentifierChanged(QString aValue)
+void
+QOfonoExtSimInfo::Private::onCardIdentifierChanged(
+    const QString& aValue)
 {
     if (iCardIdentifier != aValue) {
         iCardIdentifier = aValue;
-        Q_EMIT iParent->cardIdentifierChanged(aValue);
+        Q_EMIT parentObject()->cardIdentifierChanged(aValue);
     }
 }
 
-void QOfonoExtSimInfo::Private::onSubscriberIdentityChanged(QString aValue)
+void
+QOfonoExtSimInfo::Private::onSubscriberIdentityChanged(
+    const QString& aValue)
 {
     if (iSubscriberIdentity != aValue) {
         iSubscriberIdentity = aValue;
-        Q_EMIT iParent->subscriberIdentityChanged(aValue);
+        Q_EMIT parentObject()->subscriberIdentityChanged(aValue);
     }
 }
 
-void QOfonoExtSimInfo::Private::onServiceProviderNameChanged(QString aValue)
+void
+QOfonoExtSimInfo::Private::onServiceProviderNameChanged(
+    const QString& aValue)
 {
     if (iServiceProviderName != aValue) {
         iServiceProviderName = aValue;
-        Q_EMIT iParent->serviceProviderNameChanged(aValue);
+        Q_EMIT parentObject()->serviceProviderNameChanged(aValue);
     }
 }
 
@@ -227,42 +246,47 @@ void QOfonoExtSimInfo::Private::onServiceProviderNameChanged(QString aValue)
 // QOfonoExtSimInfo
 // ==========================================================================
 
-QOfonoExtSimInfo::QOfonoExtSimInfo(QObject* aParent) :
+QOfonoExtSimInfo::QOfonoExtSimInfo(
+    QObject* aParent) :
     QObject(aParent),
     iPrivate(new Private(this))
-{
-}
+{}
 
 QOfonoExtSimInfo::~QOfonoExtSimInfo()
-{
-}
+{}
 
-bool QOfonoExtSimInfo::valid() const
+bool
+QOfonoExtSimInfo::valid() const
 {
     return iPrivate->iValid;
 }
 
-QString QOfonoExtSimInfo::modemPath() const
+QString
+QOfonoExtSimInfo::modemPath() const
 {
     return iPrivate->modemPath();
 }
 
-QString QOfonoExtSimInfo::cardIdentifier() const
+QString
+QOfonoExtSimInfo::cardIdentifier() const
 {
     return iPrivate->iCardIdentifier;
 }
 
-QString QOfonoExtSimInfo::subscriberIdentity() const
+QString
+QOfonoExtSimInfo::subscriberIdentity() const
 {
     return iPrivate->iSubscriberIdentity;
 }
 
-QString QOfonoExtSimInfo::serviceProviderName() const
+QString
+QOfonoExtSimInfo::serviceProviderName() const
 {
     return iPrivate->iServiceProviderName;
 }
 
-void QOfonoExtSimInfo::setModemPath(QString aPath)
+void
+QOfonoExtSimInfo::setModemPath(QString aPath)
 {
     iPrivate->setModemPath(aPath);
 }

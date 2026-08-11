@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -20,14 +21,15 @@
 
 #include <QQmlExtensionPlugin>
 
-class QOFONOEXT_EXPORT QOfonoExtDeclarativePlugin : public QQmlExtensionPlugin
+class QOFONOEXT_EXPORT QOfonoExtDeclarativePlugin :
+    public QQmlExtensionPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID QQmlExtensionInterface_iid)
 
 public:
-    void registerTypes(const char* aUri);
-    static void registerTypes(const char* aUri, int aMajor, int aMinor);
+    void registerTypes(const char* uri) Q_DECL_OVERRIDE;
+    static void registerTypes(const char* uri, int major, int minor);
 };
 
 #endif // QOFONOEXTDECLARATIVEPLUGIN_H

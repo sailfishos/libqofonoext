@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -20,7 +21,9 @@
 
 #include <QAbstractListModel>
 
-class QOfonoExtModemListModel : public QAbstractListModel {
+class QOfonoExtModemListModel :
+    public QAbstractListModel
+{
     Q_OBJECT
     Q_PROPERTY(bool valid READ valid NOTIFY validChanged)
     Q_PROPERTY(int count READ count NOTIFY countChanged)
@@ -36,15 +39,15 @@ public:
         IMEISVRole
     };
 
-    explicit QOfonoExtModemListModel(QObject* aParent = NULL);
+    explicit QOfonoExtModemListModel(QObject* parent = Q_NULLPTR);
 
     bool valid() const;
     int count() const;
 
-    QHash<int,QByteArray> roleNames() const;
-    int rowCount(const QModelIndex& aParent) const;
-    QVariant data(const QModelIndex& aIndex, int aRole) const;
-    bool setData(const QModelIndex& aIndex, const QVariant& aValue, int aRole);
+    QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
+    int rowCount(const QModelIndex&) const Q_DECL_OVERRIDE;
+    QVariant data(const QModelIndex&, int) const Q_DECL_OVERRIDE;
+    bool setData(const QModelIndex&, const QVariant&, int) Q_DECL_OVERRIDE;
 
 Q_SIGNALS:
     void validChanged(bool aValid);
@@ -52,17 +55,17 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void onValidChanged(bool aValid);
-    void onAvailableModemsChanged(QStringList aModems);
-    void onEnabledModemsChanged(QStringList aModems);
-    void onDefaultDataModemChanged(QString aModemPath);
-    void onDefaultVoiceModemChanged(QString aModemPath);
-    void onPresentSimChanged(int aIndex, bool aPresent);
-    void onImeiCodesChanged(QStringList aList);
-    void onImeisvCodesChanged(QStringList aList);
+    void onAvailableModemsChanged(const QStringList&);
+    void onEnabledModemsChanged(const QStringList&);
+    void onDefaultDataModemChanged(QString);
+    void onDefaultVoiceModemChanged(QString);
+    void onPresentSimChanged(int, bool);
+    void onImeiCodesChanged(const QStringList&);
+    void onImeisvCodesChanged(const QStringList&);
 
 private:
-    void defaultModemChanged(Role aRole, int aPrevRow, int aNewRow);
-    void roleChanged(Role aRole, QStringList aPrevList, QStringList aNewList);
+    void defaultModemChanged(Role, int, int);
+    void roleChanged(Role aRole, const QStringList&, const QStringList&);
 
 private:
     QSharedPointer<QOfonoExtModemManager> iModemManager;

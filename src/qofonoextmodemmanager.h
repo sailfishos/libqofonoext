@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -18,7 +19,8 @@
 
 #include "qofonoext_types.h"
 
-class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
+class QOFONOEXT_EXPORT QOfonoExtModemManager :
+    public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool valid READ valid NOTIFY validChanged)
@@ -40,7 +42,7 @@ class QOFONOEXT_EXPORT QOfonoExtModemManager : public QObject
     Q_PROPERTY(int errorCount READ errorCount NOTIFY errorCountChanged)
 
 public:
-    explicit QOfonoExtModemManager(QObject *parent = nullptr);
+    explicit QOfonoExtModemManager(QObject* parent = Q_NULLPTR);
     ~QOfonoExtModemManager();
 
     bool valid() const;
@@ -61,13 +63,13 @@ public:
     int activeSimCount() const;
     int errorCount() const;
 
-    Q_INVOKABLE QString imeiAt(int aIndex) const;
-    Q_INVOKABLE QString imeisvAt(int aIndex) const;
-    Q_INVOKABLE bool simPresentAt(int aIndex) const;
+    Q_INVOKABLE QString imeiAt(int) const;
+    Q_INVOKABLE QString imeisvAt(int) const;
+    Q_INVOKABLE bool simPresentAt(int) const;
 
-    void setEnabledModems(QStringList aModems);
-    void setDefaultDataSim(QString aImsi);
-    void setDefaultVoiceSim(QString aImsi);
+    void setEnabledModems(QStringList);
+    void setDefaultDataSim(QString);
+    void setDefaultVoiceSim(QString);
 
     static QSharedPointer<QOfonoExtModemManager> instance();
 
