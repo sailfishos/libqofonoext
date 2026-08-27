@@ -1,7 +1,7 @@
 Name:       libqofonoext-qt6
 
 Summary:    A library of Qt bindings for ofono extensions
-Version:    1.0.35
+Version:    1.2.0
 Release:    1
 License:    LGPLv2
 URL:        https://github.com/sailfishos/libqofonoext
@@ -15,10 +15,6 @@ BuildRequires:  pkgconfig(Qt6Core)
 BuildRequires:  pkgconfig(Qt6DBus)
 BuildRequires:  pkgconfig(Qt6Quick)
 BuildRequires:  pkgconfig(qofono-qt6) >= %{libqofono_version}
-
-# license macro requires rpm >= 4.11
-BuildRequires:  pkgconfig(rpm)
-%define license_support %(pkg-config --exists 'rpm >= 4.11'; echo $?)
 
 Requires:   libqofono-qt6 >= %{libqofono_version}
 Requires(post): /sbin/ldconfig
@@ -59,9 +55,7 @@ This package contains the development header files for %{name}
 
 %files
 %{_libdir}/%{name}.so.*
-%if %{license_support} == 0
 %license LICENSE.LGPL
-%endif
 
 %files declarative
 %{_libdir}/qt6/qml/org/nemomobile/ofono

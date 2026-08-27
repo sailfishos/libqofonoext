@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12.0 FATAL_ERROR)
 
-set(LIBQOFONOEXT_VERSION "1.0.35" CACHE STRING "libqofonoext version")
+set(LIBQOFONOEXT_VERSION "1.2.0" CACHE STRING "libqofonoext version")
 set(QT_MAJOR_VERSION 5 CACHE STRING "Qt major version")
 
 project(libqofonoext
