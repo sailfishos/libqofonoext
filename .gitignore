@@ -4,6 +4,7 @@ build
 *.pro.user
 .qmake.stash
 Makefile
+CMakeLists.txt.user*
 plugin/Makefile
 plugin/libqofonoextdeclarative*.so*
 src/Makefile

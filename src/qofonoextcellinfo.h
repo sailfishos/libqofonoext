@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -18,7 +19,8 @@
 
 #include "qofonoext_types.h"
 
-class QOFONOEXT_EXPORT QOfonoExtCellInfo : public QObject
+class QOFONOEXT_EXPORT QOfonoExtCellInfo :
+    public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString modemPath READ modemPath WRITE setModemPath NOTIFY modemPathChanged)
@@ -26,16 +28,16 @@ class QOFONOEXT_EXPORT QOfonoExtCellInfo : public QObject
     Q_PROPERTY(QStringList cells READ cells NOTIFY cellsChanged)
 
 public:
-    explicit QOfonoExtCellInfo(QObject* aParent = Q_NULLPTR);
-    QOfonoExtCellInfo(QString aModemPath, QObject* aParent = Q_NULLPTR); // Blocks (since 1.0.27)
+    explicit QOfonoExtCellInfo(QObject* parent = Q_NULLPTR);
+    QOfonoExtCellInfo(QString modemPath, QObject* parent = Q_NULLPTR); // Blocks (since 1.0.27)
     ~QOfonoExtCellInfo();
 
     // Shared instance(s) for C++ use
-    static QSharedPointer<QOfonoExtCellInfo> instance(QString aModemPath);
-    static QSharedPointer<QOfonoExtCellInfo> instance(QString aModemPath, bool aMayBlock); // Since 1.0.27
+    static QSharedPointer<QOfonoExtCellInfo> instance(QString modemPath);
+    static QSharedPointer<QOfonoExtCellInfo> instance(QString modemPath, bool mayBlock); // Since 1.0.27
 
     QString modemPath() const;
-    void setModemPath(QString aModemPath);
+    void setModemPath(QString);
 
     bool valid() const;
     QStringList cells() const;

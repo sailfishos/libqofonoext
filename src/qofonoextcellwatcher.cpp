@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -17,11 +18,13 @@
 #include "qofonoextcellinfo.h"
 #include "qofonomanager.h"
 
-class QOfonoExtCellWatcher::Private : public QObject {
+class QOfonoExtCellWatcher::Private :
+    public QObject
+{
     Q_OBJECT
 
 public:
-    Private(QOfonoExtCellWatcher* aParent);
+    Private(QOfonoExtCellWatcher*);
 
     QOfonoExtCellWatcher* iParent;
     QSharedPointer<QOfonoManager> iOfonoManager;
@@ -30,95 +33,107 @@ public:
     QMap<QString, QSharedPointer<QOfonoExtCell> > iKnownCells;
 
 private:
-    void updateCellInfo();
     QStringList updateKnownCells();
 
-public Q_SLOTS:
+private: // SLOTS
+    void updateCellInfo();
     void updateValidCells();
 };
 
-QOfonoExtCellWatcher::Private::Private(QOfonoExtCellWatcher* aParent) :
+QOfonoExtCellWatcher::Private::Private(
+    QOfonoExtCellWatcher* aParent) :
     QObject(aParent),
     iParent(aParent),
     iOfonoManager(QOfonoManager::instance())
 {
-    connect(iOfonoManager.data(),
-        SIGNAL(availableChanged(bool)),
-        SLOT(updateValidCells()));
-    connect(iOfonoManager.data(),
-        SIGNAL(modemsChanged(QStringList)),
-        SLOT(updateValidCells()));
+    connect(iOfonoManager.data(), &QOfonoManager::availableChanged,
+        this, &Private::updateValidCells);
+    connect(iOfonoManager.data(), &QOfonoManager::modemsChanged,
+        this, &Private::updateValidCells);
     updateValidCells();
 }
 
-void QOfonoExtCellWatcher::Private::updateCellInfo()
+void
+QOfonoExtCellWatcher::Private::updateCellInfo()
 {
     int i;
     QStringList modems;
+
     if (iOfonoManager->available()) {
         modems = iOfonoManager->modems();
     }
     modems.sort();
+
     bool changed = true;
+
     if (modems.count() == iCellInfoList.count()) {
         changed = false;
-        for (i=0; i<modems.count(); i++) {
+        for (i = 0; i < modems.count(); i++) {
             if (iCellInfoList.at(i)->modemPath() != modems.at(i)) {
                 changed = true;
                 break;
             }
         }
     }
+
     if (changed) {
         QList<QSharedPointer<QOfonoExtCellInfo> > bak(iCellInfoList);
-        for (i=0; i<iCellInfoList.count(); i++) {
+
+        for (i = 0; i < iCellInfoList.count(); i++) {
             iCellInfoList.at(i)->disconnect(this);
         }
         iCellInfoList.clear();
-        for (i=0; i<modems.count(); i++) {
+        for (i = 0; i < modems.count(); i++) {
             QSharedPointer<QOfonoExtCellInfo> cellInfo =
                 QOfonoExtCellInfo::instance(modems.at(i));
+
             iCellInfoList.append(cellInfo);
-            connect(cellInfo.data(),
-                SIGNAL(cellsChanged()),
-                SLOT(updateValidCells()));
+            connect(cellInfo.data(), &QOfonoExtCellInfo::cellsChanged,
+                this, &Private::updateValidCells);
         }
     }
 }
 
-QStringList QOfonoExtCellWatcher::Private::updateKnownCells()
+QStringList
+QOfonoExtCellWatcher::Private::updateKnownCells()
 {
     updateCellInfo();
 
     QStringList allCells;
     int i;
-    for (i=0; i<iCellInfoList.count(); i++) {
+
+    allCells.reserve(iCellInfoList.count());
+    for (i = 0; i < iCellInfoList.count(); i++) {
         allCells.append(iCellInfoList.at(i)->cells());
     }
 
     QStringList knownCells(iKnownCells.keys());
+
     allCells.sort();
     knownCells.sort();
     if (allCells != knownCells) {
         QMap<QString, QSharedPointer<QOfonoExtCell> > bak(iKnownCells);
+
         iKnownCells.clear();
-        for (i=0; i<allCells.count(); i++) {
+        for (i = 0; i < allCells.count(); i++) {
             QString path(allCells.at(i));
             QSharedPointer<QOfonoExtCell> cell = bak.value(path);
+
             if (cell.isNull()) {
                 cell = QSharedPointer<QOfonoExtCell>(new QOfonoExtCell(path), &QObject::deleteLater);
             }
             iKnownCells.insert(path, cell);
             if (!bak.remove(path)) {
                 // This is the first time we are seeing this cell
-                connect(cell.data(),
-                    SIGNAL(validChanged()),
-                    SLOT(updateValidCells()));
+                connect(cell.data(), &QOfonoExtCell::validChanged,
+                    this, &Private::updateValidCells);
             }
         }
+
         // Disconnect those cells that we no longer need
         QList<QSharedPointer<QOfonoExtCell> > leftover = bak.values();
-        for (i=0; i<leftover.count(); i++) {
+
+        for (i = 0; i < leftover.count(); i++) {
             leftover.at(i)->disconnect(this);
         }
     }
@@ -126,12 +141,14 @@ QStringList QOfonoExtCellWatcher::Private::updateKnownCells()
     return allCells;
 }
 
-void QOfonoExtCellWatcher::Private::updateValidCells()
+void
+QOfonoExtCellWatcher::Private::updateValidCells()
 {
     QStringList knownCells = updateKnownCells();
     QStringList validCells;
     int i;
-    for (i=0; i<knownCells.count(); i++) {
+
+    for (i = 0; i < knownCells.count(); i++) {
         QString path(knownCells.at(i));
         QSharedPointer<QOfonoExtCell> cell = iKnownCells.value(path);
         if (cell->valid()) {
@@ -142,7 +159,7 @@ void QOfonoExtCellWatcher::Private::updateValidCells()
     bool changed = true;
     if (validCells.count() == iValidCells.count()) {
         changed = false;
-        for (i=0; i<validCells.count(); i++) {
+        for (i = 0; i < validCells.count(); i++) {
             if (iValidCells.at(i)->path() != validCells.at(i)) {
                 changed = true;
                 break;
@@ -152,7 +169,7 @@ void QOfonoExtCellWatcher::Private::updateValidCells()
 
     if (changed && validCells.count() == knownCells.count()) {
         iValidCells.clear();
-        for (i=0; i<validCells.count(); i++) {
+        for (i = 0; i < validCells.count(); i++) {
             iValidCells.append(iKnownCells.value(validCells.at(i)));
         }
         if (iParent) {
@@ -161,11 +178,11 @@ void QOfonoExtCellWatcher::Private::updateValidCells()
     }
 }
 
-QOfonoExtCellWatcher::QOfonoExtCellWatcher(QObject* aParent) :
+QOfonoExtCellWatcher::QOfonoExtCellWatcher(
+    QObject* aParent) :
     QObject(aParent),
     iPrivate(new Private(this))
-{
-}
+{}
 
 QOfonoExtCellWatcher::~QOfonoExtCellWatcher()
 {
@@ -173,7 +190,8 @@ QOfonoExtCellWatcher::~QOfonoExtCellWatcher()
     iPrivate->deleteLater();
 }
 
-QList<QSharedPointer<QOfonoExtCell> > QOfonoExtCellWatcher::cells() const
+QList<QSharedPointer<QOfonoExtCell> >
+QOfonoExtCellWatcher::cells() const
 {
     return iPrivate->iValidCells;
 }

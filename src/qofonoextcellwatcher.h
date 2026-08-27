@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -19,12 +20,13 @@
 #include "qofonoextcell.h"
 
 // Watches available cells from all modems
-class QOFONOEXT_EXPORT QOfonoExtCellWatcher : public QObject
+class QOFONOEXT_EXPORT QOfonoExtCellWatcher :
+    public QObject
 {
     Q_OBJECT
 
 public:
-    explicit QOfonoExtCellWatcher(QObject* aParent = NULL);
+    explicit QOfonoExtCellWatcher(QObject* parent = NULL);
     ~QOfonoExtCellWatcher();
 
     QList<QSharedPointer<QOfonoExtCell> > cells() const;

@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -18,7 +19,8 @@
 
 #include "qofonoext_types.h"
 
-class QOFONOEXT_EXPORT QOfonoExtSimInfo : public QObject
+class QOFONOEXT_EXPORT QOfonoExtSimInfo :
+    public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool valid READ valid NOTIFY validChanged)
@@ -26,9 +28,10 @@ class QOFONOEXT_EXPORT QOfonoExtSimInfo : public QObject
     Q_PROPERTY(QString cardIdentifier READ cardIdentifier NOTIFY cardIdentifierChanged)
     Q_PROPERTY(QString subscriberIdentity READ subscriberIdentity NOTIFY subscriberIdentityChanged)
     Q_PROPERTY(QString serviceProviderName READ serviceProviderName NOTIFY serviceProviderNameChanged)
+    Q_PROPERTY(QString cardLabel READ cardLabel WRITE setCardLabel NOTIFY cardLabelChanged) // Since 1.2.0
 
 public:
-    explicit QOfonoExtSimInfo(QObject* aParent = NULL);
+    explicit QOfonoExtSimInfo(QObject* parent = Q_NULLPTR);
     ~QOfonoExtSimInfo();
 
     bool valid() const;
@@ -36,8 +39,10 @@ public:
     QString cardIdentifier() const;
     QString subscriberIdentity() const;
     QString serviceProviderName() const;
+    QString cardLabel() const; // Since 1.2.0
 
-    void setModemPath(QString aPath);
+    void setModemPath(QString);
+    void setCardLabel(QString); // Since 1.2.0
 
 Q_SIGNALS:
     void validChanged(bool value);
@@ -45,6 +50,7 @@ Q_SIGNALS:
     void cardIdentifierChanged(QString value);
     void subscriberIdentityChanged(QString value);
     void serviceProviderNameChanged(QString value);
+    void cardLabelChanged(QString value); // Since 1.2.0
 
 private:
     class Private;

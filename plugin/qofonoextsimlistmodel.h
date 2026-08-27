@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2021 Jolla Ltd.
 ** Copyright (C) 2015-2021 Slava Monich <slava.monich@jolla.com>
 **
@@ -20,7 +21,9 @@
 #include "qofonoextsiminfo.h"
 #include "qofonoextmodemmanager.h"
 
-class QOfonoExtSimListModel : public QAbstractListModel {
+class QOfonoExtSimListModel :
+    public QAbstractListModel
+{
     Q_OBJECT
     Q_PROPERTY(bool valid READ valid NOTIFY validChanged)
     Q_PROPERTY(int count READ count NOTIFY countChanged)
@@ -42,18 +45,21 @@ public:
         PreferredLanguagesRole,
         PinRetriesRole,
         FixedDialingRole,
-        BarredDialingRole
+        BarredDialingRole,
+        LabelRole // Since 1.2.0
     };
 
-    explicit QOfonoExtSimListModel(QObject* aParent = NULL);
+    explicit QOfonoExtSimListModel(QObject* parent = Q_NULLPTR);
 
     bool valid() const;
     int count() const;
 
 protected:
-    QHash<int,QByteArray> roleNames() const;
-    int rowCount(const QModelIndex& aParent) const;
-    QVariant data(const QModelIndex& aIndex, int aRole) const;
+    Qt::ItemFlags flags(const QModelIndex&) const Q_DECL_OVERRIDE;
+    QHash<int,QByteArray> roleNames() const Q_DECL_OVERRIDE;
+    int rowCount(const QModelIndex&) const Q_DECL_OVERRIDE;
+    QVariant data(const QModelIndex&, int) const Q_DECL_OVERRIDE;
+    bool setData(const QModelIndex&, const QVariant&, int) Q_DECL_OVERRIDE;
 
 Q_SIGNALS:
     void validChanged();

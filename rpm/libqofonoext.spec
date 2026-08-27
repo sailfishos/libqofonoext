@@ -1,7 +1,7 @@
 Name:       libqofonoext
 
 Summary:    A library of Qt bindings for ofono extensions
-Version:    1.0.32
+Version:    1.0.35
 Release:    1
 License:    LGPLv2
 URL:        https://github.com/sailfishos/libqofonoext
@@ -20,6 +20,9 @@ BuildRequires:  pkgconfig(qofono-qt5) >= %{libqofono_version}
 # license macro requires rpm >= 4.11
 BuildRequires:  pkgconfig(rpm)
 %define license_support %(pkg-config --exists 'rpm >= 4.11'; echo $?)
+
+%{!?cmake_build:%define cmake_build cmake --build .}
+%{!?cmake_install:%define cmake_install DESTDIR="%{buildroot}" cmake --install .}
 
 Requires:   libqofono-qt5 >= %{libqofono_version}
 Requires(post): /sbin/ldconfig

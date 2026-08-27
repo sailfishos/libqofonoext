@@ -1,5 +1,6 @@
 /****************************************************************************
 **
++* Copyright (C) 2026 Jolla Mobile Ltd
 ** Copyright (C) 2015-2023 Slava Monich <slava@monich.com>
 ** Copyright (C) 2015-2021 Jolla Ltd.
 **
@@ -18,7 +19,8 @@
 
 #include "qofonoext_types.h"
 
-class QOFONOEXT_EXPORT QOfonoExtCell : public QObject
+class QOFONOEXT_EXPORT QOfonoExtCell :
+    public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString path READ path WRITE setPath NOTIFY pathChanged)
@@ -71,13 +73,13 @@ public:
         InvalidValue = INT_MAX
     };
 
-    explicit QOfonoExtCell(QObject* aParent = Q_NULLPTR);
-    QOfonoExtCell(QString aPath, bool aMayBlock); // Since 1.0.27
-    QOfonoExtCell(QString aPath);
+    explicit QOfonoExtCell(QObject* parent = Q_NULLPTR);
+    QOfonoExtCell(QString path, bool mayBlock); // Since 1.0.27
+    QOfonoExtCell(QString path);
     ~QOfonoExtCell();
 
     QString path() const;
-    void setPath(QString aPath);
+    void setPath(QString);
 
     bool valid() const;
     Type type() const;
